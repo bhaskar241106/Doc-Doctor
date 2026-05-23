@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
 
     # Switchable Hybrid configs
-    AI_PROVIDER: str = "online"
+    AI_PROVIDER: str = "local"
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_LLM_MODEL: str = "gpt-4o-mini"
