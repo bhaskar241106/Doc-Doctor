@@ -1,55 +1,98 @@
 # 🤝 Contributing to DocDoctor
 
-First off, thank you for taking the time to contribute to **DocDoctor**! It is developers like you who make the open-source community an amazing place to learn, inspire, and create. 
+### **Let's build the world's best autonomous codebase intelligence agent together!**
 
-Please read through these guidelines to understand how you can help this project grow and achieve maximum reach!
+<div align="left">
 
----
+[![Contributions Welcome](https://img.shields.io/badge/PRs-Welcome-ec4899?style=for-the-badge&logo=git&logoColor=white)](#)
+[![Code Style - Black](https://img.shields.io/badge/Code%20Style-Black-8b5cf6?style=for-the-badge&logo=python&logoColor=white)](#)
+[![License - MIT](https://img.shields.io/badge/License-MIT-10b981?style=for-the-badge)](#)
 
-## 🌟 How Can I Contribute?
-
-### 1. Reporting Bugs & Issues
-* **Search First**: Before opening a new issue, check if it has already been reported.
-* **Be Descriptive**: Include your OS (Windows, macOS, Linux), Python version, Node.js version, and active AI engine mode (Offline/Online).
-* **Provide Logs**: Copy terminal logs from the FastAPI backend or browser developer console errors.
-
-### 2. Proposing Features & Enhancement ideas
-* **Open a Discussion**: Suggest features in a GitHub Issue using the `feature-request` template.
-* **Explain the Use Case**: Detail why this feature is beneficial (e.g., "Adding a Groq engine integration to support sub-second cloud summaries").
-
-### 3. Submitting Pull Requests (PRs)
-1. **Fork the Repository**: Create your own fork and branch off `main`.
-2. **Respect the Structure**:
-   * Keep backend endpoints modular inside [api/routes.py](file:///c:/Users/bhaskar/Desktop/DocDoctor/backend/api/routes.py).
-   * Put database migrations inside [services/db_service.py](file:///c:/Users/bhaskar/Desktop/DocDoctor/backend/services/db_service.py).
-   * Retain the gorgeous glassmorphism UI styles in the [frontend/components](file:///c:/Users/bhaskar/Desktop/DocDoctor/frontend/components/) directory.
-3. **Verify Type Safety**:
-   * Run the python compilation check: `python -m py_compile backend/main.py`.
-   * Run typescript type checking: `npx tsc --noEmit` inside the `frontend/` directory.
-4. **Format Your Commit Messages**:
-   * `feat: add groq AI provider dynamic switch`
-   * `fix: resolve ast scanner parameter type extraction error`
-   * `docs: update API endpoints specs visual grid`
+</div>
 
 ---
 
-## 🚀 Coding Standards
-
-### Backend (FastAPI / Python)
-* Document all router endpoints with explicit Pydantic response schemas.
-* Wrap heavy network/git actions inside FastAPI's async `BackgroundTasks` to prevent HTTP timeouts.
-* Handle API errors cleanly and return appropriate HTTP status codes (e.g., `404 Not Found` when a document is still generating).
-
-### Frontend (Next.js / TypeScript)
-* Keep components strictly visual, modular, and type-safe.
-* Retain state synchronization using React contexts where appropriate.
-* Do not introduce ad-hoc utility styling: stick to our harmonious dark-theme/radial gradient design token guidelines.
+> [!IMPORTANT]  
+> We are committed to building a highly secure, local-first, privacy-respecting developer agent. We welcome all contributions—from structural syntax parsing adjustments to gorgeous glassmorphic frontend micro-interactions. Read through this visual roadmap to get started!
 
 ---
 
-## 💎 Community Guidelines
+## ⚡ The Contribution Pipeline (Visual Flow)
 
-* **Be Respectful**: Encourage newcomers, provide positive code reviews, and build a collaborative space.
-* **Write Beautiful Code**: Keep documentation integrity by maintaining descriptive docstrings and comments.
+Here is a visual roadmap of how a code contribution goes from a local idea to a merged feature:
+
+```mermaid
+flowchart LR
+    classDef stage fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
+    classDef check fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
+    classDef merge fill:#4c0519,stroke:#ec4899,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
+
+    step1["🍴 1. FORK REPO<br>Fork codebase to your GitHub"]:::stage
+    step2["🌿 2. CREATE BRANCH<br>Branch off main locally"]:::stage
+    step3["💻 3. HACK CODE<br>Implement features type-safe"]:::stage
+    step4["🔬 4. VERIFY BUILDS<br>Validate python & tsc compiler checks"]:::check
+    step5["🚀 5. SUBMIT PR<br>Open a PR referencing open issues"]:::stage
+    step6["🎉 6. CODE MERGED<br>Feature goes live on DocDoctor!"]:::merge
+
+    step1 --> step2
+    step2 --> step3
+    step3 --> step4
+    step4 --> step5
+    step5 --> step6
+```
+
+---
+
+## 💎 Custom Visual Contribution Guide
+
+Toggle spec sheets below to understand our quality benchmarks:
+
+| Phase Dimension | <span style="background-color: #8b5cf6; color: white; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 11px;">💜 VIOLET CORE: BACKEND SPEC</span> | <span style="background-color: #ec4899; color: white; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 11px;">💗 ROSE STACK: FRONTEND SPEC</span> |
+| :--- | :--- | :--- |
+| **Logic & Structure** | Modular router bindings inside FastAPI API classes | Isolated React components utilizing Next.js layouts |
+| **Performance** | Async background jobs preventing request timeouts | Fluid state context persistent cache in localStorage |
+| **Data Persistence** | Dynamic `INSERT OR REPLACE` SQLite key settings | Responsive server payload bindings using fetch streams |
+| **Security Standard** | ChromaDB namespace scoping isolated per workspace | Air-gapped compliance options for client settings |
+
+---
+
+## 🚀 Step-by-Step Integration Standards
+
+### 🐛 1. Submitting Bug Reports
+* **Check Existing Issues**: Search active boards first to prevent duplicates.
+* **Document OS & Stack Specs**: Detail if running Windows, Linux, or macOS.
+* **Define AI Router Mode**: Specify if using **Offline (Ollama)** or **Online (Cloud)**.
+* **Extract Logs**: Capture terminal traces from backend servers or Next.js consoles.
+
+### 💡 2. Feature & Enhancement Proposals
+* Open an issue using the `feature-request` tag.
+* Detail the exact developer use-case (e.g., *"Adding a Groq provider integration for sub-second cloud summaries"*).
+
+### 📝 3. Pull Request (PR) Requirements
+Before submitting a PR, make sure your local workspace passes compiler checks:
+
+> [!TIP]  
+> **Backend Compilation Verification (Python)**:
+> ```powershell
+> python -m py_compile backend/main.py
+> ```
+
+> [!NOTE]  
+> **Frontend Type-Safety Verification (TypeScript)**:
+> ```powershell
+> cd frontend
+> npx tsc --noEmit
+> ```
+
+---
+
+## ✍️ Creative Commit Message Guidelines
+
+To maintain a clean commit history, format commit titles using these exact badges:
+
+*   `<span style="background-color: #8b5cf6; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">feat</span>` ➜ Introducing a new codebase parsing module or switching tool.
+*   `<span style="background-color: #ec4899; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">fix</span>` ➜ Resolving syntax scanner index exceptions.
+*   `<span style="background-color: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">docs</span>` ➜ Enhancing setup files or markdown diagrams.
+*   `<span style="background-color: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">style</span>` ➜ Updating glassmorphic overlays and dashboard layouts.
 
 *Thank you for making DocDoctor the ultimate self-healing codebase intelligence agent!* 🩺✨
