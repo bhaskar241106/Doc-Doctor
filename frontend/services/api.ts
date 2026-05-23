@@ -23,11 +23,13 @@ export interface CommitActivity {
 export interface Document {
   id: number;
   repo_id: number;
-  doc_type: "readme" | "api_docs" | "architecture" | "onboarding" | "pr_summary";
+  doc_type: "readme" | "api_docs" | "architecture" | "onboarding" | "pr_summary" | "deployment";
   title: string;
   content: string;
   created_at: string;
   updated_at: string;
+  status?: "pending" | "generating" | "completed" | "failed" | "missing";
+  error_message?: string;
 }
 
 export interface ChatSession {
@@ -46,14 +48,28 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface HealthResponse {
+  status: "healthy" | "degraded" | "unhealthy";
+  provider: "local" | "online";
+  offline_mode: boolean;
+  ollama_checked: boolean;
+  ollama_connected: boolean | null;
+  openai_checked: boolean;
+  openai_available: boolean | null;
+  reason: string | null;
+}
+
 export const apiService = {
   // Health check
-  async checkHealth(): Promise<boolean> {
+  async checkHealth(): Promise<HealthResponse | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/health`);
-      return res.ok;
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
     } catch {
-      return false;
+      return null;
     }
   },
 
@@ -108,12 +124,54 @@ export const apiService = {
 
   async getDocumentByType(repoId: number, docType: string): Promise<Document | null> {
     const res = await fetch(`${API_BASE_URL}/repositories/${repoId}/documents/${docType}`);
-    if (res.status === 404) {
+    
+    if (res.status === 202) {
+      return {
+        id: -1,
+        repo_id: repoId,
+        doc_type: docType as any,
+        title: `Generating ${docType.replace('_', ' ').toUpperCase()}...`,
+        content: "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: "generating"
+      };
+    }
+    
+    if (res.status === 500) {
+      const errBody = await res.json();
+      return {
+        id: -1,
+        repo_id: repoId,
+        doc_type: docType as any,
+        title: `${docType.replace('_', ' ').toUpperCase()} Generation Failed`,
+        content: "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: "failed",
+        error_message: errBody.error || "Generation failed"
+      };
+    }
+
+    if (res.status === 404 || res.status === 400) {
       return null;
     }
+
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || `Failed to load ${docType}`);
+    }
+    
+    return res.json();
+  },
+
+  async regenerateDocument(repoId: number, docType: string): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/repositories/${repoId}/documents/${docType}/regenerate`, {
+      method: "POST"
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to trigger regeneration");
     }
     return res.json();
   },

@@ -167,50 +167,49 @@ ollama pull qwen2.5-coder:7b
 ollama pull nomic-embed-text
 ```
 
-### 1. Boot up the FastAPI Backend
-Navigate to the `backend/` directory, install requirements, and boot the server:
-```bash
-cd backend
-pip install -r requirements.txt
-python main.py
-```
-> [!TIP]  
-> Backend server will be active at **`http://localhost:8000`**. Explore interactive Swagger specifications at `http://localhost:8000/docs`.
+### ⚡ Direct Execution via Interactive Controllers (Recommended)
 
-### 2. Launch the Next.js Dashboard
-Open a separate terminal window, navigate to the `frontend/` directory, install node modules, and run the hot-reloading dev server:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-> [!NOTE]  
-> The dashboard will start immediately at **`http://localhost:3000`**.
+DocDoctor features premium, resource-optimized **Interactive Service Controllers** in the root directory that automatically handle startup, limit Node.js memory footprint (preventing device lag/paging), stagger startups, and clean up lingering background zombie processes:
+
+*   **`start-all.bat`**: Full-suite controller allowing staggered start, clean start, active memory safety allocations, or manual cache wiping.
+*   **`start-frontend.bat`**: Dedicated frontend controller with safety limits and compiler filters.
+*   **`start-backend.bat`**: Dedicated backend manager with port conflict solvers.
+
+**Simply double-click `start-all.bat` in the repository root and choose Option `1`!**
 
 ---
 
-## 🧪 Real-Time Ingestion & Simulation
+## 🧪 Verification & Proof Flows
 
-### A. Ingesting Your Codebase
-1. Open the DocDoctor dashboard (`http://localhost:3000`).
-2. Under **Connect Codebase**, insert:
-   - **Repository Name**: `DocDoctor`
-   - **Local Path**: Absolute path of this project, e.g., `c:\Users\bhaskar\Desktop\DocDoctor`
-   - **Default Branch**: `main`
-3. Tap **Add & Ingest Codebase**. 
-4. Watch the pipeline build AST indices and draft 5 document categories dynamically.
+Follow these simple steps to verify and prove that the entire DocDoctor autonomous codebase indexing and living document engine is running perfectly:
 
-### B. Trigger Simulated Commits
-To verify real-time webhook parsing, run our automated commit activity simulator in your terminal:
-```bash
-python backend/tests/mock_push.py
-```
-Observe the dashboard reload automatically to reflect the incoming commit payload from `Bhaskar`, listing diffs and re-generating active guides instantly.
+### Proof Flow A: Full Codebase Ingestion
+1. Open the DocDoctor dashboard at **`http://localhost:3000`** in your browser.
+2. In the **Connection Console** on the right, connect any public GitHub repository or any local folder path (you can use this project path for a quick demo!):
+   * **Repository Name**: `DocDoctor`
+   * **Clone URL / Local Path**: `c:\Users\bhaskar\Desktop\DocDoctor`
+   * **Default Branch**: `main`
+3. Tap **INGEST CODEBASE**.
+4. DocDoctor will parse the files structurally via AST, generate semantic embeddings, index them into ChromaDB, and build 5 documentation types asynchronously.
+5. Go to the **Living Documents** tab (`http://localhost:3000/docs`) to view dynamically generated documentation: `README.md`, `API.md Reference`, `ARCHITECTURE.md`, `ONBOARDING.md`, and **`DEPLOYMENT.md`** with **zero generic placeholders**.
+6. Open the **Repository AI Chat** tab (`http://localhost:3000/chat`) and start a codebase-aware conversation (e.g., ask *"Explain how the AST syntax tree parser isolates function parameters"*). It will stream responses with retrieved file citations!
+
+### Proof Flow B: Real-Time Webhook Commit Synchronization
+To verify real-time webhook parsing, commit tracking, and incremental documentation updates:
+1. Keep the dashboard open at **`http://localhost:3000`**.
+2. Open a separate terminal window and run our automated mock push simulator script:
+   ```bash
+   python C:\Users\bhaskar\.gemini\antigravity\brain\4820b414-50c1-4626-9666-32825db0e953\scratch\mock_push.py
+   ```
+3. Watch the terminal output accept the payload (`✔ Webhook payload successfully accepted by DocDoctor!`).
+4. Look at the browser dashboard—it will immediately refresh in real-time, showing the new commit from developer **`Bhaskar`** (*"Add async JWT user authentication handler and refresh token DB schema"*).
+5. Navigate to **Living Documents** ➜ **PR/Commit Summaries** tab to view the newly compiled changelog outlining the technical impact!
 
 ### C. Configure Cloud Routing
 1. Toggle the sidebar AI Engine to **Online**.
 2. Input your OpenAI API Key (`sk-proj-...`) and save.
-3. Observe the dynamic active node footer transition to **Cloud Node: ONLINE**! Future chat prompts and code indexing will run instantly through premium cloud models with full context.
+3. Observe the active node footer transition to **Cloud Node: ONLINE**! Future chat prompts and code indexing will run instantly through premium cloud models with full context.
+
 
 ---
 

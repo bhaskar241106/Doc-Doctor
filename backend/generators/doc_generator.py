@@ -181,7 +181,34 @@ class DocGenerator:
         Return ONLY the raw markdown content without any wrapping quotes or preamble.
         """
         
-        logger.info(f"Generating Commit PR Summary for {repo_name}...")
+    async def generate_deployment_docs(self, repo_name: str, structure: List[str], infra_metadata: str) -> str:
+        """Generates premium systems deployment and devops documentation."""
+        system_prompt = (
+            "You are a Staff DevOps and Cloud Infrastructure Engineer. "
+            "Your objective is to generate elegant, precise, and robust DEPLOYMENT.md deployment operations guides."
+        )
+        
+        prompt = f"""
+        Generate a complete, production-grade DEPLOYMENT.md systems deployment guide for repository: '{repo_name}'.
+        
+        REPOSITORY FILES:
+        {chr(10).join(structure)}
+        
+        DETECTED INFRASTRUCTURE & CONFIGURATION FILES:
+        {infra_metadata}
+        
+        INSTRUCTIONS:
+        1. Write a detailed systems operations and deployment guide.
+        2. Describe the deployment requirements and target environments (e.g. Docker, Kubernetes, standard VM, or cloud server).
+        3. Outline a step-by-step Production Setup Guide including environment variables, database setup, caching options, and network port binds.
+        4. Provide an elegant, copyable `Dockerfile` or `docker-compose.yml` config illustration based on the project stack.
+        5. Detail server scaling, process management (e.g. using systemd, PM2, or Gunicorn), and logging configuration guidelines.
+        6. Include critical tips on security, certificates, backups, and health check monitoring.
+        
+        Return ONLY the raw markdown content without any wrapping quotes or preamble.
+        """
+        
+        logger.info(f"Generating Systems Deployment Guide for {repo_name}...")
         return await ai_service.generate(prompt=prompt, system_prompt=system_prompt)
 
 doc_generator = DocGenerator()

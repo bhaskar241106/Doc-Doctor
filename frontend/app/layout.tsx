@@ -24,7 +24,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="h-full font-sans text-slate-100 bg-[#070a13] antialiased">
+      <body className="h-full font-sans text-zinc-100 bg-[#09090b] antialiased">
         <LayoutWrapper>{children}</LayoutWrapper>
       </body>
     </html>

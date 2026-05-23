@@ -131,11 +131,154 @@ class DocOrchestrator:
         onboard_md = await doc_generator.generate_onboarding_guide(name, source_files, summaries_block)
         db.upsert_document(repo_id, "onboarding", "Developer Onboarding Guide", onboard_md)
 
+        # Deployment & DevOps
+        infra_files = [f for f in source_files if any(keyword in f.lower() for keyword in ["docker", "compose", "deploy", "kube", "actions", "yml", "yaml", "workflow", "nginx", "setup", "requirements", "package.json"])]
+        infra_context = "Infrastructure & deployment configurations found:\n" + "\n".join([f"- {f}" for f in infra_files[:15]])
+        deploy_md = await doc_generator.generate_deployment_docs(name, source_files, infra_context)
+        db.upsert_document(repo_id, "deployment", "Systems Deployment Guide", deploy_md)
+
         # Update last sync
         db.update_repo_sync_time(repo_id)
         
         logger.info(f"Repository {name} successfully ingested and initial documents generated!")
         return db.get_repository(repo_id)
+
+    async def generate_document_on_demand(self, repo_id: int, doc_type: str) -> Optional[Dict[str, Any]]:
+        """
+        Generates a specific document type on demand.
+        Sets document status to 'generating', executes the LLM generation, and updates to 'completed' or 'failed'.
+        """
+        # Get repository metadata
+        repo = db.get_repository(repo_id)
+        if not repo:
+            logger.error(f"Cannot generate document. Repository {repo_id} not found.")
+            return None
+
+        # Insert placeholder document in DB as 'generating'
+        db.upsert_document(
+            repo_id=repo_id,
+            doc_type=doc_type,
+            title=f"Generating {doc_type.replace('_', ' ').title()}...",
+            content="",
+            status="generating",
+            file_path=os.path.join(repo["local_path"], f"docdoctor_{doc_type}.md")
+        )
+
+        try:
+            logger.info(f"Generating document on demand: repo={repo_id} type={doc_type}")
+            local_path = repo["local_path"]
+            source_files = git_service.list_source_files(local_path)
+            
+            # Read structural summaries to inject context
+            structural_summaries = []
+            api_metadata_list = []
+            for rel_path in source_files[:20]:
+                full_path = os.path.join(local_path, rel_path)
+                if not os.path.exists(full_path):
+                    continue
+                try:
+                    with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                    lang = chunker.detect_language(rel_path)
+                    if lang == "python":
+                        ast = parse_python_file(content)
+                        if ast.get("success"):
+                            api_metadata_list.append({
+                                "filename": rel_path,
+                                "classes": ast.get("classes", []),
+                                "functions": ast.get("functions", [])
+                            })
+                            if ast.get("docstring"):
+                                structural_summaries.append(f"- **{rel_path}**: {ast['docstring'].splitlines()[0]}")
+                    elif lang in ("javascript", "typescript", "go", "java"):
+                        gen = parse_general_file(content, rel_path)
+                        if gen.get("success"):
+                            api_metadata_list.append({
+                                "filename": rel_path,
+                                "classes": gen.get("classes", []),
+                                "functions": gen.get("functions", [])
+                            })
+                except Exception:
+                    pass
+
+            summaries_block = "\n".join(structural_summaries) if structural_summaries else "Source files summary context."
+
+            # Route by document type
+            if doc_type == "readme":
+                md_content = await doc_generator.generate_readme(repo["name"], source_files, summaries_block)
+                title = "README.md"
+            elif doc_type == "api_docs":
+                md_content = await doc_generator.generate_api_docs(repo["name"], api_metadata_list)
+                title = "API Reference"
+            elif doc_type == "architecture":
+                arch_context = "Summary of classes/methods and codebase patterns:\n" + summaries_block
+                md_content = await doc_generator.generate_architecture_summary(repo["name"], source_files, arch_context)
+                title = "Architecture Breakdown"
+            elif doc_type == "onboarding":
+                md_content = await doc_generator.generate_onboarding_guide(repo["name"], source_files, summaries_block)
+                title = "Developer Onboarding Guide"
+            elif doc_type == "deployment":
+                infra_files = [f for f in source_files if any(keyword in f.lower() for keyword in ["docker", "compose", "deploy", "kube", "actions", "yml", "yaml", "workflow", "nginx", "setup", "requirements", "package.json"])]
+                infra_context = "Infrastructure & deployment configurations found:\n" + "\n".join([f"- {f}" for f in infra_files[:15]])
+                md_content = await doc_generator.generate_deployment_docs(repo["name"], source_files, infra_context)
+                title = "Systems Deployment Guide"
+            elif doc_type == "pr_summary":
+                # Extract latest commit details from local git repo if available
+                commits = git_service.get_commit_history(local_path, limit=1)
+                if commits:
+                    latest = commits[0]
+                    author = latest["author"]
+                    message = latest["message"]
+                    commit_hash = latest["commit_hash"]
+                    diff = git_service.get_latest_commit_diff(local_path)
+                else:
+                    author = "Developer"
+                    message = "Initial Codebase Synchronisation"
+                    commit_hash = "push_fallback"
+                    diff = {"added": source_files[:10], "modified": [], "deleted": []}
+
+                md_content = await doc_generator.generate_pr_summary(
+                    repo_name=repo["name"],
+                    author=author,
+                    commit_message=message,
+                    diff_files=diff
+                )
+                title = f"Commit {commit_hash[:7].upper()} Summary"
+            else:
+                raise ValueError(f"Invalid document type: {doc_type}")
+
+            # Write generated file to local repo directory as well for sync verification
+            doc_file_name = f"DEPLOYMENT.md" if doc_type == "deployment" else f"{doc_type.upper()}.md"
+            file_path = os.path.join(local_path, doc_file_name)
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(md_content)
+                logger.info(f"Saved generated file locally at: {file_path}")
+            except Exception as e:
+                logger.error(f"Failed to write file physically: {e}")
+
+            # Update document to completed
+            res = db.upsert_document(
+                repo_id=repo_id,
+                doc_type=doc_type,
+                title=title,
+                content=md_content,
+                status="completed",
+                file_path=file_path
+            )
+            return res
+
+        except Exception as e:
+            logger.error(f"Failed on-demand document generation for repo={repo_id} type={doc_type}: {e}")
+            db.upsert_document(
+                repo_id=repo_id,
+                doc_type=doc_type,
+                title=f"{doc_type.replace('_', ' ').title()} Generation Failed",
+                content=f"[Error during generation: {e}]",
+                status="failed",
+                error_message=str(e)
+            )
+            return None
 
     async def synchronize_webhook_push(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Handles GitHub push event webhook, updates local copy, synchronizes vector store, and triggers AI summaries."""
@@ -280,6 +423,12 @@ class DocOrchestrator:
 
         onboard_md = await doc_generator.generate_onboarding_guide(repo_data["name"], source_files, summaries_block)
         db.upsert_document(repo_id, "onboarding", "Developer Onboarding Guide", onboard_md)
+
+        # Deployment & DevOps
+        infra_files = [f for f in source_files if any(keyword in f.lower() for keyword in ["docker", "compose", "deploy", "kube", "actions", "yml", "yaml", "workflow", "nginx", "setup", "requirements", "package.json"])]
+        infra_context = "Infrastructure & deployment configurations found:\n" + "\n".join([f"- {f}" for f in infra_files[:15]])
+        deploy_md = await doc_generator.generate_deployment_docs(repo_data["name"], source_files, infra_context)
+        db.upsert_document(repo_id, "deployment", "Systems Deployment Guide", deploy_md)
 
         # Update last sync time
         db.update_repo_sync_time(repo_id)

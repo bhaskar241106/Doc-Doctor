@@ -13,6 +13,7 @@ class DBService:
     def _get_conn(self):
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")  # Enforce foreign key constraints and cascades!
         return conn
 
     def _init_db(self):
@@ -42,10 +43,27 @@ class DBService:
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'completed',
+                file_path TEXT,
+                error_message TEXT,
                 FOREIGN KEY (repo_id) REFERENCES repositories(id) ON DELETE CASCADE,
                 UNIQUE(repo_id, doc_type)
             )
             """)
+
+            # Run table migrations to add new tracking columns dynamically if they don't exist in older DBs
+            try:
+                cursor.execute("ALTER TABLE documents ADD COLUMN status TEXT DEFAULT 'completed'")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                cursor.execute("ALTER TABLE documents ADD COLUMN file_path TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                cursor.execute("ALTER TABLE documents ADD COLUMN error_message TEXT")
+            except sqlite3.OperationalError:
+                pass
 
             # Commit activity / pushes
             cursor.execute("""
@@ -148,7 +166,7 @@ class DBService:
             return cursor.rowcount > 0
 
     # Document operations
-    def upsert_document(self, repo_id: int, doc_type: str, title: str, content: str) -> Dict[str, Any]:
+    def upsert_document(self, repo_id: int, doc_type: str, title: str, content: str, status: str = "completed", file_path: Optional[str] = None, error_message: Optional[str] = None) -> Dict[str, Any]:
         with self._get_conn() as conn:
             cursor = conn.cursor()
             now = datetime.utcnow().isoformat()
@@ -163,13 +181,21 @@ class DBService:
             if row:
                 doc_id = row['id']
                 cursor.execute(
-                    "UPDATE documents SET title = ?, content = ?, updated_at = ? WHERE id = ?",
-                    (title, content, now, doc_id)
+                    """
+                    UPDATE documents 
+                    SET title = ?, content = ?, updated_at = ?, status = ?, file_path = ?, error_message = ? 
+                    WHERE id = ?
+                    """,
+                    (title, content, now, status, file_path, error_message, doc_id)
                 )
             else:
                 cursor.execute(
-                    "INSERT INTO documents (repo_id, doc_type, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                    (repo_id, doc_type, title, content, now, now)
+                    """
+                    INSERT INTO documents 
+                    (repo_id, doc_type, title, content, created_at, updated_at, status, file_path, error_message) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (repo_id, doc_type, title, content, now, now, status, file_path, error_message)
                 )
                 doc_id = cursor.lastrowid
                 
@@ -181,7 +207,10 @@ class DBService:
                 "title": title,
                 "content": content,
                 "created_at": now,
-                "updated_at": now
+                "updated_at": now,
+                "status": status,
+                "file_path": file_path,
+                "error_message": error_message
             }
 
     def get_documents_by_repo(self, repo_id: int) -> List[Dict[str, Any]]:

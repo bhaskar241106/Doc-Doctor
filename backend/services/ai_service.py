@@ -2,7 +2,7 @@ import httpx
 import json
 import logging
 from typing import List, Dict, Any, AsyncGenerator, Optional
-from backend.utils.config import settings
+from backend.utils.config import settings, get_ai_settings
 from backend.services.db_service import db
 
 logger = logging.getLogger("ai_service")
@@ -13,53 +13,60 @@ class AIService:
         self.client = httpx.AsyncClient(timeout=120.0)
 
     def get_active_provider(self) -> str:
-        """Dynamically fetch the active provider from SQLite settings table (default to .env)."""
-        return db.get_setting("ai_provider", settings.AI_PROVIDER)
+        """Dynamically fetch the active provider from single source of truth."""
+        return get_ai_settings().provider
 
     def is_offline_mode_active(self) -> bool:
-        """Return whether local Ollama offline mode is enabled."""
-        value = db.get_setting("offline_mode", str(settings.OFFLINE_MODE)).lower()
-        return value in ("1", "true", "yes", "on")
+        """Return whether offline mode is enabled."""
+        return get_ai_settings().offline_mode
 
-    def get_api_key(self) -> str:
-        """Dynamically fetch the online API key from SQLite settings table (default to .env)."""
-        return db.get_setting("openai_api_key", settings.OPENAI_API_KEY)
+    def get_api_key(self) -> Optional[str]:
+        """Dynamically fetch the online API key from single source of truth."""
+        return get_ai_settings().openai_api_key
+
+    async def check_ollama_connected(self) -> bool:
+        """Ping local Ollama connection tags endpoint."""
+        try:
+            response = await self.client.get(f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/tags")
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    async def check_openai_available(self, api_key: Optional[str] = None) -> bool:
+        """Ping online OpenAI connection models endpoint."""
+        ai_settings = get_ai_settings()
+        if ai_settings.offline_mode:
+            logger.info("OpenAI access is blocked by offline mode.")
+            return False
+        
+        target_key = api_key or ai_settings.openai_api_key
+        if not target_key:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {target_key}"}
+            response = await self.client.get(f"{settings.OPENAI_BASE_URL.rstrip('/')}/models", headers=headers)
+            return response.status_code == 200
+        except Exception:
+            return False
 
     async def check_health(self) -> bool:
         """Verify the active provider connection is alive."""
-        provider = self.get_active_provider()
-        if provider == "local" and not self.is_offline_mode_active():
-            logger.info("Local Ollama access is currently disabled by offline mode setting.")
-            return False
-        
-        if provider == "local":
-            try:
-                response = await self.client.get(f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/tags")
-                return response.status_code == 200
-            except Exception:
-                return False
+        ai_settings = get_ai_settings()
+        if ai_settings.provider == "local":
+            return await self.check_ollama_connected()
         else:
-            # Online mode
-            api_key = self.get_api_key()
-            if not api_key:
-                logger.warning("OpenAI API key missing in settings")
-                return False
-            try:
-                # Validate the API key by listing available models
-                headers = {"Authorization": f"Bearer {api_key}"}
-                response = await self.client.get(f"{settings.OPENAI_BASE_URL.rstrip('/')}/models", headers=headers)
-                return response.status_code == 200
-            except Exception:
-                return False
+            return await self.check_openai_available(ai_settings.openai_api_key)
 
     async def get_embeddings(self, text: str) -> List[float]:
         """Fetch vector embeddings using the active local or online provider."""
-        provider = self.get_active_provider()
+        ai_settings = get_ai_settings()
         
-        if provider == "local":
-            if not self.is_offline_mode_active():
-                logger.warning("Skipping local Ollama embeddings because offline mode is disabled.")
-                return [0.0] * 768
+        # 1. Mandatory structured logging before every AI request
+        logger.info(f"Provider={ai_settings.provider}, offline_mode={ai_settings.offline_mode}")
+        
+        if ai_settings.provider == "local":
+            # Ollama always works locally, offline mode should never block it
             try:
                 payload = {"model": settings.OLLAMA_EMBED_MODEL, "prompt": text}
                 url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/embeddings"
@@ -69,12 +76,15 @@ class AIService:
             except Exception as e:
                 logger.error(f"Local Ollama embedding error: {e}")
             return [0.0] * 768
-        else:
-            # Online Mode (OpenAI-compatible)
-            api_key = self.get_api_key()
+        elif ai_settings.provider == "openai":
+            # Cloud APIs disabled in offline mode
+            if ai_settings.offline_mode:
+                raise Exception("Cloud APIs disabled in offline mode")
+                
+            api_key = ai_settings.openai_api_key
             if not api_key:
                 logger.error("OpenAI API key missing. Cannot generate online embeddings.")
-                return [0.0] * 1536 # OpenAI text-embedding-3-small uses 1536 dims!
+                return [0.0] * 1536
                 
             try:
                 headers = {
@@ -93,6 +103,8 @@ class AIService:
             except Exception as e:
                 logger.error(f"Online OpenAI embedding error: {e}")
             return [0.0] * 1536
+        else:
+            raise Exception(f"Unsupported provider: {ai_settings.provider}")
 
     async def generate(
         self,
@@ -101,11 +113,13 @@ class AIService:
         temperature: float = 0.2
     ) -> str:
         """Synthesize technical documentation using the active local or online model."""
-        provider = self.get_active_provider()
+        ai_settings = get_ai_settings()
         
-        if provider == "local":
-            if not self.is_offline_mode_active():
-                return "[Offline mode is disabled. Enable offline mode to run local Ollama models.]"
+        # 1. Mandatory structured logging before every AI request
+        logger.info(f"Provider={ai_settings.provider}, offline_mode={ai_settings.offline_mode}")
+        
+        if ai_settings.provider == "local":
+            # Local Ollama is never blocked by offline mode
             try:
                 payload = {
                     "model": settings.OLLAMA_LLM_MODEL,
@@ -123,9 +137,12 @@ class AIService:
             except Exception as e:
                 return f"[Local LLM generation error: {e}]"
             return "[Error generating via local Ollama]"
-        else:
-            # Online Mode (OpenAI-compatible)
-            api_key = self.get_api_key()
+        elif ai_settings.provider == "openai":
+            # Cloud APIs disabled in offline mode
+            if ai_settings.offline_mode:
+                raise Exception("Cloud APIs disabled in offline mode")
+                
+            api_key = ai_settings.openai_api_key
             if not api_key:
                 return "[Error: Online API Key missing! Go to Dashboard/Sidebar settings to configure it.]"
                 
@@ -152,6 +169,8 @@ class AIService:
                     return f"[Online API Error {response.status_code}: {response.text}]"
             except Exception as e:
                 return f"[Online Cloud generation error: {e}]"
+        else:
+            raise Exception(f"Unsupported provider: {ai_settings.provider}")
 
     async def chat_stream(
         self,
@@ -159,12 +178,13 @@ class AIService:
         temperature: float = 0.2
     ) -> AsyncGenerator[str, None]:
         """Stream repository chat responses using active local or online models."""
-        provider = self.get_active_provider()
+        ai_settings = get_ai_settings()
         
-        if provider == "local":
-            if not self.is_offline_mode_active():
-                yield "\n[Offline mode is disabled. Enable offline mode to run local Ollama chat.]"
-                return
+        # 1. Mandatory structured logging before every AI request
+        logger.info(f"Provider={ai_settings.provider}, offline_mode={ai_settings.offline_mode}")
+        
+        if ai_settings.provider == "local":
+            # Local Ollama is never blocked by offline mode
             try:
                 payload = {
                     "model": settings.OLLAMA_LLM_MODEL,
@@ -175,7 +195,7 @@ class AIService:
                 url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/api/chat"
                 async with self.client.stream("POST", url, json=payload) as response:
                     if response.status_code == 200:
-                        async for line in response.iter_lines():
+                        async for line in response.aiter_lines():
                             if line:
                                 try:
                                     data = json.loads(line)
@@ -186,9 +206,13 @@ class AIService:
                                     continue
             except Exception as e:
                 yield f"\n[Streaming Connection Error (Ollama): {e}]"
-        else:
-            # Online Mode (OpenAI-compatible)
-            api_key = self.get_api_key()
+        elif ai_settings.provider == "openai":
+            # Cloud APIs disabled in offline mode
+            if ai_settings.offline_mode:
+                yield "\n[Cloud APIs disabled in offline mode]"
+                raise Exception("Cloud APIs disabled in offline mode")
+                
+            api_key = ai_settings.openai_api_key
             if not api_key:
                 yield "\n[Error: Web OpenAI API Key missing! Configure your key under settings to chat online.]"
                 return
@@ -211,7 +235,7 @@ class AIService:
                         yield f"\n[Online API Error {response.status_code}: {await response.aread()}]"
                         return
                         
-                    async for line in response.iter_lines():
+                    async for line in response.aiter_lines():
                         if line:
                             # OpenAI streams are prefixed with "data: "
                             line_str = line.strip()
@@ -228,6 +252,9 @@ class AIService:
                                     continue
             except Exception as e:
                 yield f"\n[Streaming Connection Error (Cloud): {e}]"
+        else:
+            yield f"\n[Unsupported provider: {ai_settings.provider}]"
+            raise Exception(f"Unsupported provider: {ai_settings.provider}")
 
     async def close(self):
         await self.client.aclose()

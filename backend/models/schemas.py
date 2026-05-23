@@ -29,6 +29,9 @@ class DocumentResponse(DocumentBase):
     id: int
     created_at: str
     updated_at: str
+    status: Optional[str] = "completed"
+    file_path: Optional[str] = None
+    error_message: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -92,3 +95,13 @@ class ChatResponse(BaseModel):
     session_id: str
     answer: str
     citations: List[str] = []
+
+class HealthResponse(BaseModel):
+    status: str
+    provider: str
+    offline_mode: bool
+    ollama_checked: bool
+    ollama_connected: Optional[bool] = None
+    openai_checked: bool
+    openai_available: Optional[bool] = None
+    reason: Optional[str] = None
