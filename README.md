@@ -23,22 +23,24 @@
 DocDoctor coordinates codebase scanning, semantic indexing, and document synthesis in a fully automated system loop:
 
 ```mermaid
-flowchart TD
-    classDef step fill:#0f172a,stroke:#8b5cf6,stroke-width:2px,color:#f8fafc,rx:10px,ry:10px;
-    classDef highlight fill:#1e1b4b,stroke:#f43f5e,stroke-width:2px,color:#f8fafc,rx:10px,ry:10px;
+flowchart LR
+    classDef stage fill:#0f172a,stroke:#8b5cf6,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
+    classDef route fill:#1e1b4b,stroke:#f43f5e,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
+    classDef endNode fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#f8fafc,rx:8px,ry:8px;
 
-    step1["📥 1. CONNECT<br>Provide local project folders or clone upstream git repositories"]:::step
-    step2["🔍 2. SCAN<br>AST engines scan structural bounds, functions, classes, and parameter bounds"]:::step
-    step3["🧠 3. INDEX<br>Chunkers isolate sections, vectorize contexts, and populate ChromaDB namespaces"]:::step
-    step4["🔄 4. ROUTE<br>Unified AIService dynamically routes prompts to Local VRAM or OpenAI Cloud on-the-fly"]:::highlight
-    step5["✍️ 5. SYNCHRONIZE<br>Drafts living markdown files: READMEs, API specifications, and Onboarding sheets"]:::step
-    step6["💬 6. CONVERSE<br>SSE RAG Chat streams answers word-by-word with precise source boundaries"]:::step
+    startNode["📥 1. CONNECT<br>Git Ingestion & Clone"]:::stage
 
-    step1 --> step2
-    step2 --> step3
-    step3 --> step4
-    step4 --> step5
-    step5 --> step6
+    startNode --> AST["🔍 2. SCAN<br>Compiler-Free AST syntax scanners"]:::stage
+    startNode --> GitDiff["📡 2. DELTA<br>Git Commits & Webhook Diff Engine"]:::stage
+
+    AST --> Router["🔄 3. ROUTE<br>Unified AI Router<br>(Offline Ollama &lt;=&gt; Cloud OpenAI)"]:::route
+    GitDiff --> Router
+
+    Router --> Docs["✍️ 4. SYNCHRONIZE<br>Continuous living markdown docs"]:::stage
+    Router --> Embed["🧠 4. INDEX<br>Sliding Chunks ChromaDB vectors"]:::stage
+
+    Docs --> chat["💬 5. CONVERSE<br>SSE RAG Streams & Citations"]:::endNode
+    Embed --> chat
 ```
 
 ---
