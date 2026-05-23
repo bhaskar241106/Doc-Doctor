@@ -212,25 +212,36 @@ export default function DocumentsExplorer() {
         <div className="flex flex-col gap-6 w-full">
           
           {/* Custom Navigation Tab Headers */}
-          <div className="flex flex-wrap border-b border-white/[0.04]">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-5 py-3 text-[10px] font-black tracking-widest uppercase transition-all duration-150 cursor-pointer flex items-center gap-2 border-b-2 -mb-px ${
-                    isActive
-                      ? "border-amber-500 text-white bg-white/[0.01]"
-                      : "border-transparent text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                </button>
-              );
-            })}
+          <div className="flex flex-wrap items-center justify-between border-b border-white/[0.04]">
+            <div className="flex flex-wrap">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-5 py-3 text-[10px] font-black tracking-widest uppercase transition-all duration-150 cursor-pointer flex items-center gap-2 border-b-2 -mb-px ${
+                      isActive
+                        ? "border-amber-500 text-white bg-white/[0.01]"
+                        : "border-transparent text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
+              disabled={isLoading}
+              className="mb-px px-4 py-2.5 text-[10px] font-black tracking-widest uppercase flex items-center gap-2 text-zinc-500 hover:text-white border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all cursor-pointer disabled:opacity-30"
+              title="Reload Document"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              Reload
+            </button>
           </div>
 
           {/* Document Content Box */}
@@ -318,6 +329,14 @@ export default function DocumentsExplorer() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
+                      disabled={isLoading}
+                      className="p-2 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-500 hover:text-white transition-colors cursor-pointer disabled:opacity-30"
+                      title="Reload Document"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                    </button>
                     <button
                       onClick={handleCopy}
                       className="p-2 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-500 hover:text-white transition-colors cursor-pointer"
