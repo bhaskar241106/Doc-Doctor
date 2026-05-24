@@ -1,86 +1,80 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRepo } from "@/context/RepoContext";
 import { apiService, Document } from "@/services/api";
-import { 
-  BookOpen, Terminal, Code, Award, Copy, Check, Download, 
-  HelpCircle, RefreshCw, Layers, ShieldAlert, GitCommit, Server
+import {
+  BookOpen, Terminal, Award, Copy, Check, Download,
+  HelpCircle, RefreshCw, Layers, ShieldAlert, GitCommit, Server,
+  FileText, Clock
 } from "lucide-react";
 
-// Robust high-fidelity custom markdown-to-HTML parser function
 function renderMarkdown(markdown: string): string {
-  if (!markdown) return "<p class='text-zinc-500 italic'>No documentation content loaded.</p>";
+  if (!markdown) return "<p class='text-slate-500 italic'>No content loaded.</p>";
   
   let html = markdown;
 
-  // Escape HTML entities to prevent XSS
+  // Escape HTML tags to prevent XSS
   html = html
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  // Code blocks: ```lang ... ```
+  // Code Blocks
   html = html.replace(/```(\w*)\n([\s\S]*?)```/gm, (match, lang, code) => {
-    return `<pre class="language-${lang}"><code class="block font-mono text-zinc-300 text-xs">${code.trim()}</code></pre>`;
+    return `<pre><code class="block font-mono text-slate-300 text-sm leading-relaxed bg-black/30 p-4 rounded-xl border border-white/10">${code.trim()}</code></pre>`;
   });
 
-  // Inline code: `code`
-  html = html.replace(/`([^`\n]+)`/g, "<code class='text-amber-400 bg-white/[0.04] px-1.5 py-0.5 rounded font-mono text-xs'>$1</code>");
+  // Inline Code
+  html = html.replace(/`([^`\n]+)`/g, "<code class='bg-amber-500/10 text-amber-300 px-2 py-1 rounded-lg text-sm font-mono'>$1</code>");
 
-  // GitHub alert/blockquotes: [!NOTE] [!TIP] [!IMPORTANT]
-  html = html.replace(/^&gt;\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n([\s\S]*?)(?=\n\n|\n[^\s&gt;]|$)/gm, (match, type, content) => {
+  // Markdown Alerts (GitHub Style)
+  html = html.replace(/^&gt;\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n([\s\S]*?)(?=\n\n|\n[^\s&]|$)/gm, (match, type, content) => {
     const colors: Record<string, string> = {
-      NOTE: "border-amber-500 bg-amber-500/5 text-amber-300",
-      TIP: "border-emerald-500 bg-emerald-500/5 text-emerald-300",
-      IMPORTANT: "border-rose-500 bg-rose-500/5 text-rose-300",
-      WARNING: "border-orange-500 bg-orange-500/5 text-orange-300",
-      CAUTION: "border-red-500 bg-red-500/5 text-red-300"
+      NOTE: "border-amber-500 bg-amber-500/5 text-amber-200",
+      TIP: "border-emerald-500 bg-emerald-500/5 text-emerald-200",
+      IMPORTANT: "border-orange-500 bg-orange-500/5 text-orange-200",
+      WARNING: "border-amber-500 bg-amber-500/5 text-amber-200",
+      CAUTION: "border-rose-500 bg-rose-500/5 text-rose-200"
     };
-    const c = colors[type] || "border-zinc-500 bg-zinc-500/5 text-zinc-300";
-    return `<div class="border-l-4 p-4 my-4 rounded-r-xl ${c}"><strong class="text-xs uppercase tracking-wider block mb-1">${type}</strong>${content.replace(/^&gt;\s*/gm, "").trim()}</div>`;
+    const c = colors[type] || "border-slate-500 bg-slate-500/5 text-slate-300";
+    return `<div class="border-l-4 p-4 my-5 rounded-xl ${c}"><strong class="text-xs font-bold uppercase tracking-wider block mb-2">${type}</strong><span class="text-sm leading-relaxed">${content.replace(/^&gt;\s*/gm, "").trim()}</span></div>`;
   });
 
-  // Standard blockquotes: > quote
-  html = html.replace(/^&gt;\s+(.*)$/gm, "<blockquote class='border-l-4 border-amber-500 pl-4 py-2 bg-amber-500/5 my-4 rounded-r-xl text-amber-300 italic'>$1</blockquote>");
+  // Blockquotes
+  html = html.replace(/^&gt;\s+(.*)$/gm, "<blockquote class='border-l-4 border-amber-500/30 pl-4 py-2 my-4 text-slate-400 italic'>$1</blockquote>");
 
-  // Headers: # H1, ## H2, ### H3
-  html = html.replace(/^#\s+(.*)$/gm, "<h1 class='text-2xl font-bold text-white border-b border-white/[0.08] pb-2 mt-8 mb-4'>$1</h1>");
-  html = html.replace(/^##\s+(.*)$/gm, "<h2 class='text-xl font-bold text-zinc-200 mt-6 mb-3'>$1</h2>");
-  html = html.replace(/^###\s+(.*)$/gm, "<h3 class='text-lg font-bold text-zinc-300 mt-4 mb-2'>$1</h3>");
+  // Headers
+  html = html.replace(/^#\s+(.*)$/gm, "<h1 class='text-3xl font-bold text-white mt-8 mb-4'>$1</h1>");
+  html = html.replace(/^##\s+(.*)$/gm, "<h2 class='text-2xl font-bold text-white mt-6 mb-3'>$1</h2>");
+  html = html.replace(/^###\s+(.*)$/gm, "<h3 class='text-xl font-semibold text-white mt-5 mb-2'>$1</h3>");
+  html = html.replace(/^####\s+(.*)$/gm, "<h4 class='text-lg font-semibold text-slate-200 mt-4 mb-2'>$1</h4>");
 
-  // Lists: - item or * item
-  html = html.replace(/^[-*]\s+(.*)$/gm, "<li class='list-disc ml-6 my-1 text-zinc-400'>$1</li>");
-  // Wrap list items in <ul> tags
-  html = html.replace(/(<li.*?>[\s\S]*?<\/li>)/g, "<ul class='my-3'>$1</ul>");
-  // Clean up adjacent ul tags
-  html = html.replace(/<\/ul>\s*<ul class='my-3'>/g, "");
+  // Lists
+  html = html.replace(/^[-*]\s+(.*)$/gm, "<li class='text-slate-300 mb-2'>$1</li>");
+  html = html.replace(/(<li.*?>[\s\S]*?<\/li>)/g, "<ul class='list-disc list-inside space-y-2 my-4 text-slate-300'>$1</ul>");
+  html = html.replace(/<\/ul>\s*<ul>/g, "");
 
-  // Bold text: **text**
-  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong class='text-white font-bold'>$1</strong>");
+  // Bold / Italic
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong class='text-white font-semibold'>$1</strong>");
+  html = html.replace(/\*([^*]+)\*/g, "<em class='text-slate-300 italic'>$1</em>");
 
   // Tables
-  // Simple table parser to match tables
-  html = html.replace(/^\|(.*)\|$/gm, (match, rowContent) => {
+  html = html.replace(/^\|(.*)?\|$/gm, (match, rowContent) => {
     const cells = rowContent.split("|").map((c: string) => c.trim());
     const isHeader = cells.every((c: string) => c.startsWith("---"));
-    if (isHeader) return ""; // strip division row
-    
-    // Check if it's the first header row (simple heuristic: preceding text is not table)
-    const formattedCells = cells.map((c: string) => `<td class="border border-white/[0.08] p-3 text-xs text-zinc-400">${c}</td>`).join("");
-    return `<tr class="hover:bg-white/[0.01]">${formattedCells}</tr>`;
+    if (isHeader) return "";
+    const formattedCells = cells.map((c: string) => `<td class='px-4 py-2 border border-white/10'>${c}</td>`).join("");
+    return `<tr>${formattedCells}</tr>`;
   });
-  
-  // Wrap rows in table
-  html = html.replace(/((?:<tr>[\s\S]*?<\/tr>)+)/g, "<table class='w-full border-collapse my-6 bg-white/[0.01] rounded-xl overflow-hidden'>$1</table>");
+  html = html.replace(/((?:<tr>[\s\S]*?<\/tr>)+)/g, "<table class='w-full my-6 bg-black/20 border border-white/10 rounded-xl overflow-hidden'>$1</table>");
 
-  // Line breaks / paragraphs
+  // Paragraph blocks
   html = html.split("\n\n").map(para => {
-    if (para.trim().startsWith("<h") || para.trim().startsWith("<pre") || para.trim().startsWith("<ul") || para.trim().startsWith("<table") || para.trim().startsWith("<div")) {
+    if (para.trim().startsWith("<h") || para.trim().startsWith("<pre") || para.trim().startsWith("<ul") || para.trim().startsWith("<table") || para.trim().startsWith("<div") || para.trim().startsWith("<blockquote")) {
       return para;
     }
-    // Replace standalone newlines with breaks
-    return `<p class="my-3 text-sm text-zinc-400 leading-relaxed">${para.trim().replace(/\n/g, "<br/>")}</p>`;
+    return `<p class='text-slate-300 leading-relaxed my-4'>${para.trim().replace(/\n/g, "<br/>")}</p>`;
   }).join("\n");
 
   return html;
@@ -96,12 +90,12 @@ export default function DocumentsExplorer() {
   const [copied, setCopied] = useState<boolean>(false);
 
   const tabs = [
-    { id: "readme", label: "README.md", icon: BookOpen },
-    { id: "api_docs", label: "API.md Reference", icon: Terminal },
-    { id: "architecture", label: "ARCHITECTURE.md", icon: Layers },
-    { id: "onboarding", label: "ONBOARDING.md", icon: Award },
-    { id: "pr_summary", label: "PR/Commit Summaries", icon: GitCommit },
-    { id: "deployment", label: "DEPLOYMENT.md", icon: Server },
+    { id: "readme", label: "README", icon: BookOpen },
+    { id: "api_docs", label: "API REF", icon: Terminal },
+    { id: "architecture", label: "ARCHITECTURE", icon: Layers },
+    { id: "onboarding", label: "ONBOARDING", icon: Award },
+    { id: "pr_summary", label: "PR SUMMARY", icon: GitCommit },
+    { id: "deployment", label: "DEPLOYMENT", icon: Server },
   ];
 
   const fetchDocument = async (repoId: number, type: string, isSilent = false) => {
@@ -113,16 +107,14 @@ export default function DocumentsExplorer() {
     try {
       const doc = await apiService.getDocumentByType(repoId, type);
       if (!doc) {
-        setErrorText(`Document '${type}' is not generated yet. DocDoctor is auto-generating it in the background...`);
+        setErrorText(`Document '${type}' is not generated yet. Auto-generating in background...`);
       } else {
         setDocument(doc);
       }
     } catch (err: any) {
-      setErrorText(err.message || "Failed to load document content.");
+      setErrorText(err.message || "Failed to load document.");
     } finally {
-      if (!isSilent) {
-        setIsLoading(false);
-      }
+      if (!isSilent) setIsLoading(false);
     }
   };
 
@@ -135,14 +127,11 @@ export default function DocumentsExplorer() {
     }
   }, [selectedRepo, activeTab]);
 
-  // Premium reactive polling for documents in pending/generating state
   useEffect(() => {
     if (!selectedRepo || !document || document.status !== "generating") return;
-
     const interval = setInterval(() => {
       fetchDocument(selectedRepo.id, activeTab, true);
     }, 4000);
-
     return () => clearInterval(interval);
   }, [selectedRepo, activeTab, document]);
 
@@ -151,10 +140,9 @@ export default function DocumentsExplorer() {
     setIsRetrying(true);
     try {
       await apiService.regenerateDocument(selectedRepo.id, activeTab);
-      // Immediately refetch to show generating state
       await fetchDocument(selectedRepo.id, activeTab);
     } catch (err: any) {
-      alert(err.message || "Failed to trigger document regeneration");
+      alert(err.message || "Failed to trigger regeneration");
     } finally {
       setIsRetrying(false);
     }
@@ -179,198 +167,201 @@ export default function DocumentsExplorer() {
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
-      
-      {/* Page Header */}
-      <div className="flex flex-col gap-2 border-b border-white/[0.03] pb-6">
-        <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 bg-amber-500/5 border border-amber-500/10 px-2 py-0.5 w-max">
-          Living Documentation Explorer
-        </span>
-        <h2 className="text-xl font-extrabold tracking-tight text-white leading-none uppercase">
-          Codebase Knowledge Engine
-        </h2>
-        <p className="text-[11px] text-zinc-500 max-w-2xl leading-relaxed mt-1 font-medium">
-          Browse dynamically updated architecture documents, reference guides, and commit summaries written by local AI models.
-        </p>
-      </div>
-
-      {!selectedRepo ? (
-        /* Not Connected State */
-        <div className="p-8 border border-white/[0.04] bg-[#09090b] flex flex-col items-center justify-center text-center gap-5 py-20 shadow-sm">
-          <div className="w-10 h-10 border border-white/[0.08] bg-transparent flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-white font-mono">[NO_ACTIVE_CODEBASE]</h3>
-            <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed font-medium">
-              Please select an active repository from the Sidebar or connect a new codebase on the Dashboard to access living documents.
-            </p>
-          </div>
-        </div>
-      ) : (
-        /* Main Workspace */
-        <div className="flex flex-col gap-6 w-full">
-          
-          {/* Custom Navigation Tab Headers */}
-          <div className="flex flex-wrap items-center justify-between border-b border-white/[0.04]">
-            <div className="flex flex-wrap">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-5 py-3 text-[10px] font-black tracking-widest uppercase transition-all duration-150 cursor-pointer flex items-center gap-2 border-b-2 -mb-px ${
-                      isActive
-                        ? "border-amber-500 text-white bg-white/[0.01]"
-                        : "border-transparent text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                  </button>
-                );
-              })}
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
-            <button
-              onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
-              disabled={isLoading}
-              className="mb-px px-4 py-2.5 text-[10px] font-black tracking-widest uppercase flex items-center gap-2 text-zinc-500 hover:text-white border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02] transition-all cursor-pointer disabled:opacity-30"
-              title="Reload Document"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              Reload
-            </button>
-          </div>
-
-          {/* Document Content Box */}
-          <div className="p-8 border border-white/[0.04] bg-[#09090b] flex flex-col gap-6 relative">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-radial-gradient from-amber-500/5 to-transparent pointer-events-none" />
-            
-            {isLoading ? (
-              /* Skeleton Loader */
-              <div className="py-24 flex flex-col items-center justify-center gap-4">
-                <div className="w-6 h-6 border border-amber-500 animate-spin" />
-                <p className="text-[10px] text-zinc-500 animate-pulse font-mono uppercase tracking-wider">
-                  Agent parsing codebase and compiling living documentation markdown...
-                </p>
-              </div>
-            ) : errorText ? (
-              /* Not Found / Error State */
-              <div className="py-16 border border-dashed border-white/[0.05] bg-[#000000]/30 text-center flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border border-rose-500/20 bg-rose-500/5 flex items-center justify-center">
-                  <ShieldAlert className="w-4 h-4 text-rose-400" />
-                </div>
-                <div className="flex flex-col gap-1.5 max-w-md">
-                  <h4 className="text-xs font-black text-white font-mono uppercase">Documentation Unavailable</h4>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed font-mono">
-                    {errorText.includes("not generated") 
-                      ? "The AI agent is currently writing documentation for this codebase in the background. Please wait a minute and tap check status!"
-                      : errorText}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => fetchDocument(selectedRepo.id, activeTab)} 
-                  className="px-4 py-2 border border-white/[0.06] hover:bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2 cursor-pointer transition-colors"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Check Status
-                </button>
-              </div>
-            ) : document && document.status === "generating" ? (
-              /* Premium Generating UI */
-              <div className="py-24 flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-6 h-6 border border-amber-500 animate-spin rounded-none" />
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-[10px] text-amber-500 font-mono uppercase tracking-widest animate-pulse font-black">
-                    Generating {activeTab.replace('_', ' ').toUpperCase()}...
-                  </p>
-                  <p className="text-[9px] text-zinc-600 font-mono uppercase mt-1 leading-normal">
-                    DocDoctor is reading codebase ASTs and compiling your markdown live...
-                  </p>
-                </div>
-              </div>
-            ) : document && document.status === "failed" ? (
-              /* Premium Generation Failed UI */
-              <div className="py-16 border border-dashed border-rose-500/10 bg-[#000000]/30 text-center flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border border-rose-500/20 bg-rose-500/5 flex items-center justify-center">
-                  <ShieldAlert className="w-4 h-4 text-rose-400" />
-                </div>
-                <div className="flex flex-col gap-1.5 max-w-md">
-                  <h4 className="text-xs font-black text-rose-400 font-mono uppercase">
-                    {activeTab.replace('_', ' ').toUpperCase()} Generation Failed
-                  </h4>
-                  <p className="text-[10px] text-zinc-500 leading-relaxed font-mono mt-1">
-                    Error detail: {document.error_message || "Unknown LLM connection or parsing failure."}
-                  </p>
-                </div>
-                <button 
-                  onClick={handleRetryGeneration}
-                  disabled={isRetrying}
-                  className="px-4 py-2 border border-white/[0.06] hover:bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? "animate-spin" : ""}`} />
-                  {isRetrying ? "Retrying..." : "Retry Document Generation"}
-                </button>
-              </div>
-            ) : document ? (
-              /* Rich Render State */
-              <>
-                {/* Header Actions */}
-                <div className="flex items-center justify-between border-b border-white/[0.03] pb-4 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-bold text-white flex items-center gap-2 font-mono uppercase">
-                      <Code className="w-4 h-4 text-amber-400" />
-                      {document.title.toUpperCase()}
-                    </span>
-                    <span className="text-[9px] text-zinc-500 font-bold font-mono">
-                      LAST SYNC: {new Date(document.updated_at).toLocaleString().toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
-                      disabled={isLoading}
-                      className="p-2 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-500 hover:text-white transition-colors cursor-pointer disabled:opacity-30"
-                      title="Reload Document"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                    </button>
-                    <button
-                      onClick={handleCopy}
-                      className="p-2 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-500 hover:text-white transition-colors cursor-pointer"
-                      title="Copy Raw Markdown"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                    <button
-                      onClick={handleDownload}
-                      className="p-2 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-500 hover:text-white transition-colors cursor-pointer"
-                      title="Export Markdown File"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* HTML Render Panel */}
-                <div 
-                  className="markdown-body text-zinc-300 max-w-none break-words"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(document.content) }}
-                />
-              </>
-            ) : (
-              /* Fallback default state */
-              <div className="py-20 text-center text-xs text-zinc-500 flex flex-col items-center gap-2 font-mono">
-                <HelpCircle className="w-5 h-5 text-zinc-700" />
-                NO CONTENT FOUND.
-              </div>
-            )}
-
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+                Documentation
+              </h1>
+              <p className="text-xs text-slate-400">AI-Generated Knowledge</p>
+            </div>
           </div>
         </div>
-      )}
+      </header>
+
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Hero Section */}
+        <div className="mb-12">
+          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Knowledge Engine
+          </h2>
+          <p className="text-lg text-slate-400 max-w-2xl">
+            AI-compiled architecture maps, reference guides, onboarding documents, and deployments — auto-synced.
+          </p>
+        </div>
+
+        {!selectedRepo ? (
+          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl p-16 shadow-2xl flex flex-col items-center justify-center text-center gap-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl flex items-center justify-center mb-4 border border-white/10">
+              <BookOpen className="w-10 h-10 text-slate-500" />
+            </div>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-2xl font-bold text-white">No Repository Selected</h3>
+              <p className="text-slate-400 max-w-md leading-relaxed">
+                Select an ingested codebase from the Sidebar or connect a new repository to enable the Living Knowledge Engine.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {/* Tab Bar */}
+            <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 py-3 text-xs font-semibold uppercase transition-all duration-300 flex items-center gap-2 rounded-xl ${
+                        isActive
+                          ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20"
+                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+                <div className="flex-1" />
+                <button
+                  onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
+                  disabled={isLoading}
+                  className="px-4 py-3 text-xs font-semibold uppercase transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl disabled:opacity-30"
+                  title="Reload Document"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                  Reload
+                </button>
+              </div>
+            </div>
+
+            {/* Document Panel */}
+            <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl min-h-[600px] flex flex-col relative overflow-hidden">
+              {isLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 py-32">
+                  <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
+                  <p className="text-sm text-slate-400 uppercase tracking-wider animate-pulse">
+                    Compiling markdown...
+                  </p>
+                </div>
+              ) : errorText ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-8 py-24 px-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                    <ShieldAlert className="w-10 h-10 text-amber-500" />
+                  </div>
+                  <div className="flex flex-col gap-3 text-center max-w-xl">
+                    <h4 className="text-xl font-bold text-white">Compiling Documentation...</h4>
+                    <p className="text-slate-400 leading-relaxed">
+                      {errorText.includes("not generated")
+                        ? "AI is mapping this codebase context and drafting the reference in the background. Check back in a moment."
+                        : errorText}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => fetchDocument(selectedRepo.id, activeTab)}
+                    className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Check Status
+                  </button>
+                </div>
+              ) : document && document.status === "generating" ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-8 py-32 px-8">
+                  <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
+                  <div className="flex flex-col gap-3 text-center">
+                    <p className="text-lg font-bold text-amber-500 uppercase tracking-wider animate-pulse">
+                      Synthesizing {activeTab.replace("_", " ")}...
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      Traversing codebase syntax trees and feeding RAG matrices.
+                    </p>
+                  </div>
+                </div>
+              ) : document && document.status === "failed" ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-8 py-24 px-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-500/10 to-rose-500/10 rounded-2xl flex items-center justify-center border border-red-500/20">
+                    <ShieldAlert className="w-10 h-10 text-red-500" />
+                  </div>
+                  <div className="flex flex-col gap-3 text-center max-w-xl">
+                    <h4 className="text-xl font-bold text-red-500">Generation Failed</h4>
+                    <p className="text-slate-400 leading-relaxed">
+                      {document.error_message || "Unknown LLM service connection block."}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleRetryGeneration} 
+                    disabled={isRetrying}
+                    className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRetrying ? "animate-spin" : ""}`} />
+                    {isRetrying ? "Retrying..." : "Retry Document Generation"}
+                  </button>
+                </div>
+              ) : document ? (
+                <div className="p-8 md:p-12 flex flex-col gap-8">
+                  {/* Document Header */}
+                  <div className="flex items-center justify-between pb-6 border-b border-white/10 gap-6">
+                    <div className="flex flex-col gap-2 min-w-0">
+                      <span className="text-xl font-bold text-white flex items-center gap-3 truncate">
+                        <FileText className="w-6 h-6 text-amber-500 shrink-0" />
+                        {document.title}
+                      </span>
+                      <span className="text-sm text-slate-400 flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Last Compiled: {new Date(document.updated_at).toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
+                        disabled={isLoading}
+                        className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
+                        title="Reload"
+                      >
+                        <RefreshCw className={`w-5 h-5 text-slate-400 ${isLoading ? "animate-spin" : ""}`} />
+                      </button>
+                      <button 
+                        onClick={handleCopy} 
+                        className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
+                        title="Copy Markdown"
+                      >
+                        {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5 text-slate-400" />}
+                      </button>
+                      <button 
+                        onClick={handleDownload} 
+                        className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
+                        title="Download"
+                      >
+                        <Download className="w-5 h-5 text-slate-400" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Rendered Markdown */}
+                  <div
+                    className="markdown-body max-w-none break-words prose prose-invert prose-slate"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(document.content) }}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 py-32 text-center">
+                  <HelpCircle className="w-10 h-10 text-slate-600 animate-pulse" />
+                  <span className="text-sm text-slate-500 uppercase tracking-wider">No document compiled.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
