@@ -61,3 +61,6 @@ data/
 .env.test.local
 .env.production.local
 .env*.local
+
+# IDE configurations
+.vscode/
