@@ -1,22 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRepo } from "@/context/RepoContext";
 import { apiService, ChatSession, ChatMessage } from "@/services/api";
-import { 
-  MessageSquare, Plus, Send, Terminal, Database, 
-  Code, RefreshCw, AlertCircle, FileText, ExternalLink
+import {
+  MessageSquare, Plus, Send, Terminal, Database,
+  RefreshCw, FileText, Sparkles, User, Bot, Code2
 } from "lucide-react";
 
 export default function RepositoryChat() {
   const { selectedRepo } = useRepo();
-  
-  // Chat Sessions states
+
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
-
-  // Chat message thread states
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [queryText, setQueryText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -26,29 +23,22 @@ export default function RepositoryChat() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamedText]);
+  useEffect(() => { scrollToBottom(); }, [messages, streamedText]);
 
-  // Load chat sessions for active repo
   const loadSessions = async (repoId: number) => {
     try {
       const data = await apiService.getChatSessions(repoId);
       setSessions(data);
-      if (data.length > 0 && !activeSession) {
-        setActiveSession(data[0]);
-      }
+      if (data.length > 0 && !activeSession) setActiveSession(data[0]);
     } catch (err) {
       console.error("Failed to load sessions", err);
     }
   };
 
-  // Load messages for active session
   const loadMessages = async (sessionId: string) => {
     setIsLoadingMessages(true);
     try {
@@ -82,11 +72,11 @@ export default function RepositoryChat() {
     if (!selectedRepo) return;
     setIsCreatingSession(true);
     try {
-      const title = `Session: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      const title = `Session: ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
       const newSession = await apiService.createChatSession(selectedRepo.id, title);
       setSessions(prev => [newSession, ...prev]);
       setActiveSession(newSession);
-    } catch (err) {
+    } catch {
       alert("Failed to create chat session");
     } finally {
       setIsCreatingSession(false);
@@ -99,8 +89,7 @@ export default function RepositoryChat() {
 
     const messagePayload = queryText.trim();
     setQueryText("");
-    
-    // 1. Instantly append user message to local thread for quick feedback
+
     const tempUserMsg: ChatMessage = {
       id: Date.now(),
       session_id: activeSession.id,
@@ -109,204 +98,247 @@ export default function RepositoryChat() {
       citations: [],
       timestamp: new Date().toISOString()
     };
-    
+
     setMessages(prev => [...prev, tempUserMsg]);
     setIsStreaming(true);
     setStreamedText("");
     setActiveCitations([]);
 
-    // 2. Trigger stream request
     await apiService.streamChatQuery(
       messagePayload,
       activeSession.id,
-      // onChunk
-      (textChunk) => {
-        setStreamedText(prev => prev + textChunk);
-      },
-      // onCitations
-      (citations) => {
-        setActiveCitations(citations);
-      },
-      // onComplete
+      (textChunk) => { setStreamedText(prev => prev + textChunk); },
+      (citations) => { setActiveCitations(citations); },
       async () => {
         setIsStreaming(false);
         setStreamedText("");
         setActiveCitations([]);
-        // Fetch official complete messages history from DB to replace local temp messages
         await loadMessages(activeSession.id);
       },
-      // onError
-      (err) => {
+      () => {
         setIsStreaming(false);
-        alert("Ollama chat completion error. Please check if service is active.");
+        alert("Chat error. Check if Ollama service is active.");
       }
     );
   };
 
+  const suggestedPrompts = [
+    "Explain the overall project architecture",
+    "How is the database integration implemented?",
+    "What are the core endpoints in the API routing?",
+  ];
+
   return (
-    <div className="flex-1 flex gap-6 max-w-6xl w-full mx-auto h-[calc(100vh-100px)] overflow-hidden rounded-none bg-[#000000]">
-      
-      {!selectedRepo ? (
-        /* Not Connected State */
-        <div className="flex-1 p-8 border border-white/[0.04] bg-[#09090b] flex flex-col items-center justify-center text-center gap-5 self-center max-w-xl mx-auto py-20 rounded-none shadow-sm">
-          <div className="w-10 h-10 border border-white/[0.08] bg-transparent flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-amber-400" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <MessageSquare className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+                AI Chat
+              </h1>
+              <p className="text-xs text-slate-400">Semantic Code Explorer</p>
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-white font-mono">[CHAT_OFFLINE]</h3>
-            <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed font-medium">
-              Please select an active repository from the Sidebar or connect a new codebase on the Dashboard to access living documents.
-            </p>
-          </div>
+          {selectedRepo && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <Database className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm text-emerald-400 font-medium">{selectedRepo.name}</span>
+            </div>
+          )}
         </div>
-      ) : (
-        /* Dual Panel Interface */
-        <>
-          {/* Left Session Column (w-64) */}
-          <div className="w-64 border border-white/[0.04] bg-[#09090b] p-4 flex flex-col gap-4 shadow-sm shrink-0 rounded-none">
-            <div className="flex items-center justify-between gap-2 px-1">
-              <span className="text-[8px] uppercase font-black text-zinc-500 tracking-widest">Conversations</span>
-              <button
-                onClick={handleCreateSession}
-                disabled={isCreatingSession}
-                className="p-1 border border-white/[0.06] hover:bg-white/[0.02] text-zinc-300 transition-colors cursor-pointer rounded-none"
-                title="New Chat Session"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
+      </header>
 
-            <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
-              {sessions.length === 0 ? (
-                <div className="text-center py-12 text-[10px] text-zinc-500 font-mono">
-                  [NO_SESSIONS]<br/>TAP '+' TO START
-                </div>
-              ) : (
-                sessions.map((sess) => {
-                  const isActive = activeSession?.id === sess.id;
-                  return (
-                    <button
-                      key={sess.id}
-                      onClick={() => setActiveSession(sess)}
-                      className={`w-full text-left px-3 py-2.5 border-l text-[9px] font-black uppercase tracking-widest transition-all duration-150 cursor-pointer truncate rounded-none ${
-                        isActive
-                          ? "bg-white/[0.01] border-amber-500 text-white"
-                          : "border-transparent text-zinc-500 hover:text-zinc-300"
-                      }`}
-                    >
-                      {sess.title.toUpperCase()}
-                    </button>
-                  );
-                })
-              )}
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {!selectedRepo ? (
+          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl p-16 shadow-2xl flex flex-col items-center justify-center text-center gap-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl flex items-center justify-center mb-4 border border-white/10">
+              <MessageSquare className="w-10 h-10 text-slate-500" />
+            </div>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-2xl font-bold text-white">Chat Offline</h3>
+              <p className="text-slate-400 max-w-md leading-relaxed">
+                Select an active repository from the Dashboard to trigger semantic RAG indexing and start chat exploration.
+              </p>
             </div>
           </div>
-
-          {/* Right Core Message Columns */}
-          <div className="flex-1 flex flex-col border border-white/[0.04] bg-[#09090b] rounded-none overflow-hidden relative">
-            <div className="absolute right-0 top-0 w-24 h-24 bg-radial-gradient from-amber-500/5 to-transparent pointer-events-none" />
-
-            {/* Header info */}
-            <div className="p-5 border-b border-white/[0.03] bg-black/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 border border-amber-500/15 bg-amber-500/5 flex items-center justify-center">
-                  <Database className="w-3.5 h-3.5 text-amber-400" />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Session Sidebar */}
+            <div className="lg:col-span-1 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-amber-500" />
+                  <span className="font-semibold">Sessions</span>
                 </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">DocDoctor Assistant</h4>
-                  <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-black mt-0.5 font-mono">
-                    OLLAMA_RAG_COMPILING
-                  </p>
+                <button 
+                  onClick={handleCreateSession} 
+                  disabled={isCreatingSession}
+                  className="p-2 hover:bg-white/5 rounded-lg transition-all duration-200 hover:scale-105 disabled:opacity-50"
+                >
+                  <Plus className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-3 max-h-[600px] overflow-y-auto">
+                {sessions.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    <MessageSquare className="w-8 h-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No chat history</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map((sess) => {
+                      const isActive = activeSession?.id === sess.id;
+                      return (
+                        <button 
+                          key={sess.id} 
+                          onClick={() => setActiveSession(sess)}
+                          className={`w-full text-left px-4 py-3 text-sm font-medium transition-all duration-200 rounded-xl truncate ${
+                            isActive
+                              ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-white"
+                              : "text-slate-400 hover:text-white hover:bg-white/5"
+                          }`}
+                        >
+                          {sess.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chat Main Area */}
+            <div className="lg:col-span-3 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+              {/* Chat Header */}
+              <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-black/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">DocDoctor AI</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                      <p className="text-xs text-slate-400">RAG Context Engine</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <span className="text-[9px] text-zinc-500 bg-white/[0.01] border border-white/[0.04] px-2 py-0.5 rounded-none font-mono">
-                CTX: <span className="font-semibold text-zinc-300">{selectedRepo.name.toUpperCase()}</span>
-              </span>
-            </div>
 
-            {/* Message Thread pane */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-              {!activeSession ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-                  <MessageSquare className="w-6 h-6 text-zinc-700 animate-pulse" />
-                  <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">
-                    CREATE A CONVERSATION TO BEGIN CHATTING
-                  </p>
-                </div>
-              ) : isLoadingMessages ? (
-                <div className="flex-1 flex items-center justify-center gap-2">
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-                  <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">LOAD_HIST_IN_PROGRESS</span>
-                </div>
-              ) : messages.length === 0 && !isStreaming ? (
-                /* Greeting / Prompt ideas */
-                <div className="flex-1 flex flex-col items-center justify-center text-center gap-6 max-w-md mx-auto py-10">
-                  <div className="w-10 h-10 border border-white/[0.08] bg-transparent flex items-center justify-center text-amber-400">
-                    <Terminal className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <h5 className="text-xs font-black uppercase tracking-widest text-white">Ask your Codebase Anything!</h5>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
-                      DocDoctor reads vector search embeds from ChromaDB to answer with high semantic accuracy.
+              {/* Messages Area */}
+              <div className="flex-1 min-h-[500px] max-h-[600px] overflow-y-auto p-8">
+                {!activeSession ? (
+                  <div className="h-full flex flex-col items-center justify-center gap-5 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl flex items-center justify-center border border-white/10">
+                      <MessageSquare className="w-8 h-8 text-slate-500" />
+                    </div>
+                    <p className="text-slate-400">
+                      Create a new session to begin exploring.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 w-full text-left font-mono">
-                    <button 
-                      onClick={() => setQueryText("Explain the overall project architecture")}
-                      className="px-4 py-3 border border-white/[0.04] bg-[#000000]/50 hover:bg-[#000000]/90 text-zinc-500 hover:text-zinc-300 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none text-left"
-                    >
-                      &gt;_ Explain the overall project architecture
-                    </button>
-                    <button 
-                      onClick={() => setQueryText("How is the git checkout/pull service implemented?")}
-                      className="px-4 py-3 border border-white/[0.04] bg-[#000000]/50 hover:bg-[#000000]/90 text-zinc-500 hover:text-zinc-300 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none text-left"
-                    >
-                      &gt;_ How is the git checkout/pull service implemented?
-                    </button>
-                    <button 
-                      onClick={() => setQueryText("What files were modified in the latest webhook push?")}
-                      className="px-4 py-3 border border-white/[0.04] bg-[#000000]/50 hover:bg-[#000000]/90 text-zinc-500 hover:text-zinc-300 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none text-left"
-                    >
-                      &gt;_ What files were modified in the latest webhook push?
-                    </button>
+                ) : isLoadingMessages ? (
+                  <div className="h-full flex flex-col items-center justify-center gap-4">
+                    <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+                    <span className="text-slate-400">Syncing thread...</span>
                   </div>
-                </div>
-              ) : (
-                /* Chat bubbles rendering */
-                <>
-                  {messages.map((msg) => {
-                    const isUser = msg.role === "user";
-                    return (
-                      <div 
-                        key={msg.id} 
-                        className={`flex gap-4 w-full ${isUser ? "flex-row-reverse" : "flex-row"}`}
-                      >
-                        {/* Avatar */}
-                        <div className={`w-8 h-8 border shrink-0 flex items-center justify-center font-bold text-[9px] font-mono rounded-none ${
-                          isUser 
-                            ? "border-white/[0.08] bg-[#000000] text-zinc-400" 
-                            : "border-amber-500/20 bg-amber-500/5 text-amber-400"
-                        }`}>
-                          {isUser ? "DEV" : "AI"}
+                ) : messages.length === 0 && !isStreaming ? (
+                  <div className="h-full flex flex-col items-center justify-center gap-12">
+                    <div className="flex flex-col items-center gap-5 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl flex items-center justify-center border border-white/10">
+                        <Terminal className="w-10 h-10 text-amber-500" />
+                      </div>
+                      <h5 className="text-2xl font-bold text-white">Semantic Code Explorer</h5>
+                      <p className="text-slate-400 leading-relaxed max-w-xl">
+                        Ask technical syntax questions. Answers are compiled via embeddings cross-referenced with your codebase index.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-4 w-full max-w-2xl">
+                      {suggestedPrompts.map((prompt, i) => (
+                        <button 
+                          key={i} 
+                          onClick={() => setQueryText(prompt)}
+                          className="bg-black/20 border border-white/10 hover:border-amber-500/30 rounded-xl px-6 py-4 text-sm text-slate-300 text-left flex items-center gap-4 transition-all duration-300 hover:bg-black/30"
+                        >
+                          <span className="text-amber-500 font-mono">&gt;_</span>
+                          <span className="flex-1">{prompt}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {messages.map((msg) => {
+                      const isUser = msg.role === "user";
+                      return (
+                        <div key={msg.id} className={`flex gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+                          <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
+                            isUser
+                              ? "bg-white/5 border border-white/10"
+                              : "bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20"
+                          }`}>
+                            {isUser ? <User className="w-5 h-5 text-slate-400" /> : <Bot className="w-5 h-5 text-white" />}
+                          </div>
+
+                          <div className={`flex-1 flex flex-col gap-3 max-w-3xl ${isUser ? "items-end" : ""}`}>
+                            <div className={`text-sm leading-relaxed whitespace-pre-wrap break-words px-6 py-4 rounded-xl ${
+                              isUser
+                                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-white"
+                                : "bg-black/20 border border-white/10 text-slate-200"
+                            }`}>
+                              {msg.content}
+                            </div>
+
+                            {!isUser && msg.citations && msg.citations.length > 0 && (
+                              <div className="flex flex-col gap-3">
+                                <span className="text-xs text-slate-500 flex items-center gap-2">
+                                  <Code2 className="w-4 h-4 text-amber-500" /> Reference Context Nodes
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                  {msg.citations.map((c, i) => (
+                                    <span 
+                                      key={i} 
+                                      className="text-xs font-mono text-slate-400 bg-black/20 border border-white/10 px-3 py-2 rounded-lg flex items-center gap-2 hover:border-amber-500/30 transition-all"
+                                    >
+                                      <FileText className="w-3.5 h-3.5 text-amber-500" /> 
+                                      {c.split("/").pop()}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                      );
+                    })}
 
-                        {/* Content Pane */}
-                        <div className="flex-1 flex flex-col gap-2.5 max-w-2xl py-1 text-[11px] leading-relaxed text-zinc-200">
-                          <div className="whitespace-pre-wrap font-sans break-words">{msg.content}</div>
-
-                          {/* Citations Panel */}
-                          {!isUser && msg.citations && msg.citations.length > 0 && (
-                            <div className="mt-2.5 pt-2.5 border-t border-white/[0.03] flex flex-col gap-1.5">
-                              <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                                <Code className="w-2.5 h-2.5 text-amber-500" /> CITED SOURCE FILES:
+                    {isStreaming && streamedText && (
+                      <div className="flex gap-4 flex-row">
+                        <div className="w-10 h-10 shrink-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                          <Bot className="w-5 h-5 text-white animate-pulse" />
+                        </div>
+                        <div className="flex-1 flex flex-col gap-3 max-w-3xl">
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap break-words bg-black/20 border border-white/10 text-slate-200 px-6 py-4 rounded-xl">
+                            {streamedText}
+                            <span className="inline-block w-2 h-5 bg-amber-500 ml-2 animate-pulse" />
+                          </div>
+                          {activeCitations.length > 0 && (
+                            <div className="flex flex-col gap-3 opacity-60">
+                              <span className="text-xs text-slate-500 flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 text-amber-500 animate-spin" /> Querying code vectors...
                               </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {msg.citations.map((c, i) => (
+                              <div className="flex flex-wrap gap-2">
+                                {activeCitations.map((c, i) => (
                                   <span 
                                     key={i} 
-                                    className="px-2 py-0.5 border border-white/[0.04] bg-white/[0.01] hover:border-amber-500/20 text-zinc-500 hover:text-zinc-300 text-[9px] font-mono flex items-center gap-1.5 transition-colors cursor-pointer rounded-none"
+                                    className="text-xs font-mono text-slate-500 bg-black/20 border border-white/10 px-3 py-2 rounded-lg flex items-center gap-2"
                                   >
-                                    <FileText className="w-3 h-3 text-zinc-600" />
+                                    <FileText className="w-3.5 h-3.5 text-amber-500/50" /> 
                                     {c.split("/").pop()}
                                   </span>
                                 ))}
@@ -315,75 +347,44 @@ export default function RepositoryChat() {
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                    )}
 
-                  {/* Streaming Assistant message block */}
-                  {isStreaming && streamedText && (
-                    <div className="flex gap-4 w-full flex-row">
-                      <div className="w-8 h-8 border border-amber-500/20 bg-amber-500/5 text-amber-400 shrink-0 flex items-center justify-center font-bold text-[9px] font-mono rounded-none">
-                        AI
-                      </div>
-                      <div className="flex-1 py-1 text-[11px] leading-relaxed text-zinc-200 flex flex-col gap-2 max-w-2xl">
-                        <div className="whitespace-pre-wrap font-sans break-words">{streamedText}</div>
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
 
-                        {activeCitations.length > 0 && (
-                          <div className="mt-2.5 pt-2.5 border-t border-white/[0.03] flex flex-col gap-1.5 animate-pulse">
-                            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                              <Code className="w-2.5 h-2.5 text-amber-500" /> SEARCHING SOURCES...
-                            </span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {activeCitations.map((c, i) => (
-                                <span key={i} className="px-2 py-0.5 border border-white/[0.04] bg-white/[0.01] text-zinc-600 text-[9px] font-mono flex items-center gap-1.5 rounded-none">
-                                  <FileText className="w-3 h-3 text-zinc-600" />
-                                  {c.split("/").pop()}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Empty space for scroll anchor */}
-                  <div ref={messagesEndRef} />
-                </>
+              {/* Input Bar */}
+              {activeSession && (
+                <div className="p-6 border-t border-white/10 bg-black/20">
+                  <form onSubmit={handleSendQuery} className="flex gap-4 items-center">
+                    <input
+                      type="text"
+                      placeholder="Ask AI about codebase logic, structures, or flows..."
+                      value={queryText}
+                      onChange={(e) => setQueryText(e.target.value)}
+                      disabled={isStreaming}
+                      className="flex-1 px-6 py-4 bg-black/30 border border-white/10 rounded-xl focus:border-amber-500/50 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all text-white placeholder-slate-500 disabled:opacity-40"
+                      required
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!queryText.trim() || isStreaming}
+                      className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-40 flex items-center gap-2"
+                    >
+                      {isStreaming ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )}
+                    </button>
+                  </form>
+                </div>
               )}
             </div>
-
-            {/* Input Submission Footer Form */}
-            {activeSession && (
-              <form 
-                onSubmit={handleSendQuery} 
-                className="p-5 border-t border-white/[0.03] bg-black/10 flex gap-3 items-center relative"
-              >
-                <input
-                  type="text"
-                  placeholder="Ask a question about codebase structures, methods, configurations..."
-                  value={queryText}
-                  onChange={(e) => setQueryText(e.target.value)}
-                  disabled={isStreaming}
-                  className="flex-1 bg-[#000000] border border-white/[0.05] focus:border-amber-500 text-xs rounded-none px-4 py-3 outline-none transition-all placeholder:text-zinc-700 font-mono disabled:opacity-50"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={!queryText.trim() || isStreaming}
-                  className="bg-white text-black font-black uppercase tracking-widest text-[10px] px-5 py-3 hover:bg-black hover:text-white border border-white transition-all duration-120 cursor-pointer flex items-center justify-center shrink-0 disabled:opacity-50 rounded-none"
-                >
-                  {isStreaming ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </form>
-            )}
-
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
