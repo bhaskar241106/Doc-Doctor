@@ -19,13 +19,13 @@ export default function LandingPage() {
     applyTheme(shouldBeDark);
   }, []);
 
-  const applyTheme = (dark: boolean) => {
+  function applyTheme(dark: boolean) {
     if (dark) {
       document.documentElement.classList.remove("light");
     } else {
       document.documentElement.classList.add("light");
     }
-  };
+  }
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
