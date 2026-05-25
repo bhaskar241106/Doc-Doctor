@@ -16,10 +16,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#000000] text-white">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#020406] text-white">
         <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="w-8 h-8 border-2 border-indigo-500 animate-spin rounded-none" />
-          <p className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase mt-2 animate-pulse-soft">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent animate-spin rounded-full" />
+          <p className="text-[10px] font-bold tracking-[0.2em] text-emerald-400 uppercase mt-2 animate-pulse">
             Initializing Environment
           </p>
         </div>
@@ -28,10 +28,17 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
+    <div className="min-h-screen bg-[#040608] overflow-x-hidden relative">
+      {/* Tech Grid Background Overlay */}
+      <div className="absolute inset-0 tech-grid pointer-events-none z-0" />
+
+      {/* Premium Ambient Background Glows */}
+      <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-emerald-500/[0.04] rounded-full blur-[130px] pointer-events-none z-0" />
+      <div className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] bg-teal-500/[0.03] rounded-full blur-[120px] pointer-events-none z-0" />
+
       {/* Fixed Sidebar navigation */}
       <div 
-        className="border-r border-zinc-800/50 bg-[#0a0a0a]"
+        className="border-r border-white/[0.05] bg-[#040608] relative z-10"
         style={{ 
           width: "280px", 
           left: 0, 
@@ -51,13 +58,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <main 
-        className="text-zinc-100"
+        className="text-zinc-100 relative z-10"
         style={{ 
           marginLeft: "280px", 
           minHeight: "100vh"
         }}
       >
-        <div className="p-8 max-w-[1400px] mx-auto">
+        <div className="p-5 max-w-[1400px] mx-auto">
           {children}
         </div>
       </main>
@@ -66,6 +73,15 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
+  React.useEffect(() => {
+    const saved = localStorage.getItem("docdoctor-theme") || "dark";
+    if (saved === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
+    }
+  }, []);
+
   return (
     <RepoProvider>
       <MainLayoutContent>{children}</MainLayoutContent>

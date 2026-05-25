@@ -1,14 +1,34 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-outfit), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-plus-jakarta), var(--font-outfit), sans-serif;
+}
+
 /* ═══════════════════════════════════════════════════════════
-   DocDoctor — Modern Gradient Design System
-   Palette: Slate · Amber · Orange · Emerald · White
+   DocDoctor — Premium Cybernetic Obsidian-Emerald Theme
 ═══════════════════════════════════════════════════════════ */
 
 :root {
   --background: #020617;
   --foreground: #fafafa;
+  --bg: #040608;
+  --surface: rgba(4, 6, 8, 0.45);
+  --border: rgba(255, 255, 255, 0.08);
+  --white: #ffffff;
+  --muted: #64748b;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+}
+
+:root.light,
+html.light {
+  --background: #fbfbfb;
+  --foreground: #0f172a;
+  --bg: #fbfbfb;
+  --surface: #edecec;
+  --border: #e2e2e2;
+  --white: #0f172a;
+  --muted: #64748b;
 }
 
 html {
@@ -16,12 +36,229 @@ html {
 }
 
 body {
-  background: linear-gradient(to bottom right, #020617, #0f172a, #020617);
+  background: linear-gradient(to bottom right, #020617, #050b11, #020617);
   color: #ffffff;
-  font-family: var(--font-outfit), 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+/* ── Premium High-Gloss Specular Card & Components ── */
+.glossy-card {
+  position: relative;
+  background: rgba(4, 6, 8, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 12px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.glossy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glossy-card:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    0 0 25px rgba(16, 185, 129, 0.06),
+    0 12px 30px rgba(0, 0, 0, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Secondary compact glossy border for inner widgets */
+.glossy-subcard {
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    inset 0 1px 0px rgba(255, 255, 255, 0.02),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+}
+
+/* High-fidelity Specular Buttons */
+.glossy-btn-primary {
+  position: relative;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 12px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.glossy-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glossy-btn-primary:hover {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 15px rgba(52, 211, 153, 0.25),
+    0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-0.5px);
+}
+
+.glossy-btn-primary:active {
+  transform: translateY(0.5px);
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(16, 185, 129, 0.15);
+}
+
+.glossy-btn-secondary {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.glossy-btn-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glossy-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 10px rgba(255, 255, 255, 0.02);
+  transform: translateY(-0.5px);
+}
+
+.glossy-btn-secondary:active {
+  transform: translateY(0.5px);
+}
+
+/* Slick Custom Glassy Dropdowns and Inputs */
+.glossy-input {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0px rgba(255, 255, 255, 0.01);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glossy-input:focus {
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 0 3px rgba(16, 185, 129, 0.1);
+  outline: none;
+}
+
+/* ── Cyber Tech Grid Blueprint Overlay ── */
+.tech-grid {
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+  mask-image: radial-gradient(circle at 50% 30%, black 20%, rgba(0, 0, 0, 0.25) 50%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, black 20%, rgba(0, 0, 0, 0.25) 50%, transparent 100%);
+}
+
+/* ── Dynamic Light Reflection Sweep (Specular Hover) ── */
+.glossy-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.glossy-sweep::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -80%;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent
+  );
+  transform: rotate(30deg);
+  transition: none;
+  pointer-events: none;
+  z-index: 10;
+}
+.glossy-sweep:hover::after {
+  left: 180%;
+  transition: all 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Breathing Pulse Glow Accent ── */
+@keyframes border-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(52, 211, 153, 0.65);
+  }
+}
+
+.glow-active {
+  animation: border-glow 3.5s infinite ease-in-out;
 }
 
 /* ── Custom Scrollbars ────────────────── */
@@ -30,25 +267,25 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #050b11;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.5);
+  background: rgba(16, 185, 129, 0.4);
 }
 
 /* ── Selection ──────────────────────────────────────────── */
 ::selection {
-  background: rgba(245, 158, 11, 0.3);
+  background: rgba(16, 185, 129, 0.2);
   color: #ffffff;
 }
 
 /* ── Focus Outlines ─────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid rgba(245, 158, 11, 0.5);
+  outline: 2px solid rgba(16, 185, 129, 0.4);
   outline-offset: 2px;
   border-radius: 0.75rem;
 }
@@ -144,7 +381,7 @@ body {
   display: inline-block;
   width: 3px;
   height: 20px;
-  background: linear-gradient(to bottom, #f59e0b, #ea580c);
+  background: linear-gradient(to bottom, #10b981, #059669);
   border-radius: 2px;
 }
 
@@ -182,7 +419,7 @@ body {
 }
 
 .markdown-body li::marker {
-  color: #f59e0b;
+  color: #10b981;
 }
 
 .markdown-body strong {
@@ -196,31 +433,31 @@ body {
 }
 
 .markdown-body a {
-  color: #f59e0b;
+  color: #10b981;
   text-decoration: none;
   font-weight: 500;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.3);
   transition: all 0.2s ease;
 }
 .markdown-body a:hover {
-  color: #fbbf24;
-  border-bottom-color: #fbbf24;
+  color: #34d399;
+  border-bottom-color: #34d399;
 }
 
 .markdown-body code {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
   padding: 0.15rem 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.875rem;
-  color: #fbbf24;
+  color: #34d399;
   border-radius: 0.375rem;
 }
 
 .markdown-body pre {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 3px solid #f59e0b;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #10b981;
   padding: 1.5rem;
   overflow-x: auto;
   margin-bottom: 1.5rem;
@@ -237,10 +474,10 @@ body {
 }
 
 .markdown-body blockquote {
-  border-left: 4px solid rgba(245, 158, 11, 0.3);
+  border-left: 4px solid rgba(16, 185, 129, 0.25);
   padding: 1rem 1.5rem;
   color: #94a3b8;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.01);
   margin-bottom: 1.5rem;
   font-style: italic;
   border-radius: 0.5rem;
@@ -287,3 +524,353 @@ body {
 .markdown-body tr:hover td {
   background: rgba(255, 255, 255, 0.02);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DocDoctor — Premium Light Theme Override
+═══════════════════════════════════════════════════════════ */
+.light body {
+  background: #fbfbfb !important;
+  color: #0f172a !important;
+}
+
+.light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+  color: #0f172a !important;
+}
+
+/* ── Crucial structural overrides for hardcoded bg-[#040608] classes ── */
+.light div.bg-\[\#040608\], 
+.light main.bg-\[\#040608\], 
+.light aside.bg-\[\#040608\],
+.light .bg-\[\#040608\],
+.light [class*="bg-[#040608]"] {
+  background: #fbfbfb !important;
+}
+
+.light .bg-slate-950,
+.light .bg-zinc-950,
+.light .bg-zinc-950\/20,
+.light .bg-zinc-950\/40,
+.light .bg-zinc-950\/50,
+.light .bg-zinc-950\/60,
+.light .bg-black\/10,
+.light .bg-black\/30,
+.light .bg-black\/35,
+.light .bg-black\/40,
+.light .bg-black\/45 {
+  background: #fbfbfb !important;
+  border-color: #e2e2e2 !important;
+}
+
+/* Sidebar overrides matching Landing Page Surface */
+.light aside {
+  background: #edecec !important;
+  border-right: 1px solid #e2e2e2 !important;
+}
+
+.light aside select {
+  background: #fbfbfb !important;
+  border: 1px solid #e2e2e2 !important;
+  color: #0f172a !important;
+}
+
+.light aside option {
+  background: #fbfbfb !important;
+  color: #0f172a !important;
+}
+
+.light aside nav a {
+  color: #64748b !important;
+}
+
+.light aside nav a:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #0f172a !important;
+}
+
+.light aside nav a.bg-white\/\[0\.04\] {
+  background: #fbfbfb !important;
+  color: #059669 !important;
+  border-left-color: #10b981 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light aside button.bg-zinc-950\/40,
+.light aside .glossy-subcard,
+.light aside .bg-zinc-955\/40 {
+  background: #fbfbfb !important;
+  border-color: #e2e2e2 !important;
+  color: #0f172a !important;
+}
+
+/* Header light overrides */
+.light header {
+  background: rgba(251, 251, 251, 0.8) !important;
+  border-bottom: 1px solid #e2e2e2 !important;
+  backdrop-filter: blur(16px) !important;
+}
+.light header h1 {
+  color: #0f172a !important;
+}
+
+/* Card overrides matching Landing Page Surface */
+.light .glossy-card {
+  background: #edecec !important;
+  border: 1px solid #e2e2e2 !important;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 10px 30px rgba(0, 0, 0, 0.03) !important;
+}
+
+.light .glossy-card::before {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4) 0%, transparent 100%) !important;
+}
+
+.light .glossy-card:hover {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 
+    0 0 25px rgba(16, 185, 129, 0.05),
+    0 10px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Codebase Context box overrides matching Base */
+.light .glossy-subcard {
+  background: #fbfbfb !important;
+  border: 1px solid #e2e2e2 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01) !important;
+}
+
+/* Inputs overrides matching Base */
+.light .glossy-input {
+  background: #fbfbfb !important;
+  border: 1px solid #e2e2e2 !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.02) !important;
+}
+
+.light .glossy-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.light .glossy-input:focus {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(0, 0, 0, 0.01),
+    0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Secondary Button overrides matching Base */
+.light .glossy-btn-secondary {
+  background: #fbfbfb !important;
+  border: 1px solid #e2e2e2 !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.light .glossy-btn-secondary:hover {
+  background: #edecec !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Live Sync Active Ring */
+.light .glow-active {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Blueprint Grid overrides */
+.light .tech-grid {
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px) !important;
+}
+
+/* Scrollbars overrides */
+.light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Primary text colors overrides to Slate-Indigo */
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .text-zinc-400 {
+  color: #64748b !important;
+}
+
+.light .text-zinc-300 {
+  color: #334155 !important;
+}
+
+.light .text-zinc-200 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+.light .text-zinc-500 {
+  color: #64748b !important;
+}
+
+.light .text-zinc-600 {
+  color: #94a3b8 !important;
+}
+
+.light .text-zinc-700 {
+  color: #94a3b8 !important;
+}
+
+/* Activity item hover overrides */
+.light .glossy-subcard.hover\:bg-zinc-900\/30:hover {
+  background: #edecec !important;
+}
+
+.light .bg-white\/\[0\.02\] {
+  background: #fbfbfb !important;
+  border-color: #e2e2e2 !important;
+  color: #0f172a !important;
+}
+
+/* AI Chat elements overrides */
+.light .lg\:col-span-3 .bg-black\/40 {
+  background: #fbfbfb !important;
+  border-color: #e2e2e2 !important;
+  color: #0f172a !important;
+}
+
+.light .bg-gradient-to-r.from-emerald-500\/10.to-teal-500\/10 {
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.06), rgba(20, 184, 166, 0.06)) !important;
+}
+
+/* Docs Markdown View Light Mode overrides */
+.light .markdown-body {
+  color: #334155 !important;
+}
+
+.light .markdown-body h1, .light .markdown-body h2, .light .markdown-body h3, .light .markdown-body h4 {
+  color: #0f172a !important;
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .markdown-body p, .light .markdown-body ul, .light .markdown-body ol {
+  color: #475569 !important;
+}
+
+.light .markdown-body strong {
+  color: #0f172a !important;
+}
+
+.light .markdown-body code {
+  background: rgba(16, 185, 129, 0.05) !important;
+  border-color: rgba(16, 185, 129, 0.12) !important;
+  color: #047857 !important;
+}
+
+.light .markdown-body pre {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .markdown-body pre code {
+  color: #334155 !important;
+}
+
+.light .markdown-body blockquote {
+  background: rgba(0, 0, 0, 0.01) !important;
+  color: #475569 !important;
+}
+
+.light .bg-black\/10 {
+  background: rgba(0, 0, 0, 0.015) !important;
+}
+
+.light .border-white\/\[0\.05\] {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── Add highly robust generic selectors to enforce landing page light mode theme strictly ── */
+.light [class*="bg-[#020406]"],
+.light [class*="bg-[#040608]"],
+.light [class*="bg-slate-950"],
+.light [class*="bg-zinc-950"],
+.light [class*="bg-[#080808]"],
+.light [class*="bg-[#0a0e14]"] {
+  background-color: #fbfbfb !important;
+}
+
+.light [class*="bg-zinc-950/40"],
+.light [class*="bg-black/35"],
+.light [class*="bg-black/40"],
+.light [class*="bg-black/45"],
+.light [class*="bg-white/[0.02]"],
+.light [class*="bg-white/[0.03]"],
+.light [class*="bg-white/[0.04]"],
+.light [class*="bg-white/5"],
+.light [class*="bg-white/10"] {
+  background-color: #fbfbfb !important;
+  border-color: #e2e2e2 !important;
+}
+
+/* Dynamic side-navigation link override using attribute wildcard */
+.light aside nav a[class*="bg-white/"] {
+  background: #fbfbfb !important;
+  color: #059669 !important;
+  border-left-color: #10b981 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Elegant light mode borders matching Landing Page */
+.light [class*="border-white"],
+.light [class*="border-zinc-"],
+.light [class*="border-slate-"] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Premium Light Mode Hover Sweeps */
+.light [class*="hover:bg-white"]:hover,
+.light [class*="hover:bg-zinc-"]:hover,
+.light [class*="hover:bg-slate-"]:hover,
+.light [class*="hover:bg-black"]:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Vivid, high-readability emerald/teal accents in light mode */
+.light .text-emerald-400 {
+  color: #059669 !important;
+}
+.light .text-teal-400 {
+  color: #0d9488 !important;
+}
+.light .text-emerald-300 {
+  color: #047857 !important;
+}
+.light .text-teal-300 {
+  color: #115e59 !important;
+}
+
+/* Premium Light Mode Solid Glossy Black Text visibility overrides */
+.light [class*="bg-clip-text"],
+.light .bg-clip-text {
+  background: none !important;
+  background-image: none !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+
+

@@ -26,15 +26,15 @@ function renderMarkdown(markdown: string): string {
   });
 
   // Inline Code
-  html = html.replace(/`([^`\n]+)`/g, "<code class='bg-amber-500/10 text-amber-300 px-2 py-1 rounded-lg text-sm font-mono'>$1</code>");
+  html = html.replace(/`([^`\n]+)`/g, "<code class='bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded-lg text-sm font-mono border border-emerald-500/15 shadow-[inset_0_1px_0px_rgba(255,255,255,0.01)]'>$1</code>");
 
   // Markdown Alerts (GitHub Style)
   html = html.replace(/^&gt;\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n([\s\S]*?)(?=\n\n|\n[^\s&]|$)/gm, (match, type, content) => {
     const colors: Record<string, string> = {
-      NOTE: "border-amber-500 bg-amber-500/5 text-amber-200",
-      TIP: "border-emerald-500 bg-emerald-500/5 text-emerald-200",
-      IMPORTANT: "border-orange-500 bg-orange-500/5 text-orange-200",
-      WARNING: "border-amber-500 bg-amber-500/5 text-amber-200",
+      NOTE: "border-emerald-500 bg-emerald-500/5 text-emerald-200 shadow-[inset_0_1px_0px_rgba(255,255,255,0.02)]",
+      TIP: "border-emerald-500 bg-emerald-500/5 text-emerald-200 shadow-[inset_0_1px_0px_rgba(255,255,255,0.02)]",
+      IMPORTANT: "border-teal-500 bg-teal-500/5 text-teal-200 shadow-[inset_0_1px_0px_rgba(255,255,255,0.02)]",
+      WARNING: "border-emerald-500 bg-emerald-500/5 text-emerald-200 shadow-[inset_0_1px_0px_rgba(255,255,255,0.02)]",
       CAUTION: "border-rose-500 bg-rose-500/5 text-rose-200"
     };
     const c = colors[type] || "border-slate-500 bg-slate-500/5 text-slate-300";
@@ -42,12 +42,12 @@ function renderMarkdown(markdown: string): string {
   });
 
   // Blockquotes
-  html = html.replace(/^&gt;\s+(.*)$/gm, "<blockquote class='border-l-4 border-amber-500/30 pl-4 py-2 my-4 text-slate-400 italic'>$1</blockquote>");
+  html = html.replace(/^&gt;\s+(.*)$/gm, "<blockquote class='border-l-4 border-emerald-500/20 pl-4 py-2 my-4 text-zinc-400 italic'>$1</blockquote>");
 
   // Headers
-  html = html.replace(/^#\s+(.*)$/gm, "<h1 class='text-3xl font-bold text-white mt-8 mb-4'>$1</h1>");
-  html = html.replace(/^##\s+(.*)$/gm, "<h2 class='text-2xl font-bold text-white mt-6 mb-3'>$1</h2>");
-  html = html.replace(/^###\s+(.*)$/gm, "<h3 class='text-xl font-semibold text-white mt-5 mb-2'>$1</h3>");
+  html = html.replace(/^#\s+(.*)$/gm, "<h1 class='text-3xl font-bold text-white mt-8 mb-4 tracking-tight'>$1</h1>");
+  html = html.replace(/^##\s+(.*)$/gm, "<h2 class='text-2xl font-bold text-white mt-6 mb-3 tracking-tight'>$1</h2>");
+  html = html.replace(/^###\s+(.*)$/gm, "<h3 class='text-xl font-semibold text-white mt-5 mb-2 tracking-tight'>$1</h3>");
   html = html.replace(/^####\s+(.*)$/gm, "<h4 class='text-lg font-semibold text-slate-200 mt-4 mb-2'>$1</h4>");
 
   // Lists
@@ -167,52 +167,55 @@ export default function DocumentsExplorer() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="min-h-screen bg-transparent text-white relative">
+      {/* Local Background Ambient glows */}
+      <div className="absolute top-[15%] right-[5%] w-[400px] h-[400px] bg-emerald-500/[0.02] rounded-full blur-[100px] pointer-events-none z-0" />
+
       {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <BookOpen className="w-6 h-6 text-white" />
+      <header className="border-b border-white/[0.05] bg-black/10 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent tracking-tight">
                 Documentation
               </h1>
-              <p className="text-xs text-slate-400">AI-Generated Knowledge</p>
+              <p className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase">AI-Generated Knowledge</p>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-5 py-5 relative z-10">
         {/* Hero Section */}
-        <div className="mb-12">
-          <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+        <div className="mb-5">
+          <h2 className="text-3xl font-extrabold mb-1.5 bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent tracking-tight font-display leading-tight">
             Knowledge Engine
           </h2>
-          <p className="text-lg text-slate-400 max-w-2xl">
+          <p className="text-xs text-zinc-400 max-w-xl leading-relaxed">
             AI-compiled architecture maps, reference guides, onboarding documents, and deployments — auto-synced.
           </p>
         </div>
 
         {!selectedRepo ? (
-          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl p-16 shadow-2xl flex flex-col items-center justify-center text-center gap-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl flex items-center justify-center mb-4 border border-white/10">
-              <BookOpen className="w-10 h-10 text-slate-500" />
+          <div className="glossy-card p-8 flex flex-col items-center justify-center text-center gap-6">
+            <div className="w-14 h-14 bg-zinc-950/50 rounded-2xl flex items-center justify-center mb-1 border border-white/[0.05] shadow-[inset_0_1px_0px_rgba(255,255,255,0.03)]">
+              <BookOpen className="w-7 h-7 text-zinc-600" />
             </div>
-            <div className="flex flex-col gap-3">
-              <h3 className="text-2xl font-bold text-white">No Repository Selected</h3>
-              <p className="text-slate-400 max-w-md leading-relaxed">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-lg font-bold text-white tracking-tight font-display">No Repository Selected</h3>
+              <p className="text-zinc-400 max-w-md leading-relaxed text-xs">
                 Select an ingested codebase from the Sidebar or connect a new repository to enable the Living Knowledge Engine.
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {/* Tab Bar */}
-            <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="glossy-card p-1">
+              <div className="flex flex-wrap items-center gap-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -220,13 +223,13 @@ export default function DocumentsExplorer() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-3 text-xs font-semibold uppercase transition-all duration-300 flex items-center gap-2 rounded-xl ${
+                      className={`px-3 py-1.5 text-xs font-bold uppercase transition-all duration-300 flex items-center gap-1.5 rounded-xl border shadow-[inset_0_1px_0px_rgba(255,255,255,0.05)] ${
                         isActive
-                          ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20"
-                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500/10 shadow-lg shadow-emerald-500/20"
+                          : "text-zinc-400 hover:text-white hover:bg-white/5 border-transparent"
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5" />
                       {tab.label}
                     </button>
                   );
@@ -235,32 +238,32 @@ export default function DocumentsExplorer() {
                 <button
                   onClick={() => selectedRepo && fetchDocument(selectedRepo.id, activeTab)}
                   disabled={isLoading}
-                  className="px-4 py-3 text-xs font-semibold uppercase transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl disabled:opacity-30"
+                  className="px-3 py-1.5 text-xs font-semibold uppercase transition-all duration-300 flex items-center gap-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl disabled:opacity-30"
                   title="Reload Document"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
                   Reload
                 </button>
               </div>
             </div>
 
             {/* Document Panel */}
-            <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl min-h-[600px] flex flex-col relative overflow-hidden">
+            <div className="glossy-card min-h-[600px] flex flex-col relative overflow-hidden">
               {isLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-6 py-32">
-                  <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
-                  <p className="text-sm text-slate-400 uppercase tracking-wider animate-pulse">
+                  <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
+                  <p className="text-xs text-zinc-400 uppercase tracking-widest animate-pulse font-semibold">
                     Compiling markdown...
                   </p>
                 </div>
               ) : errorText ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 py-24 px-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
-                    <ShieldAlert className="w-10 h-10 text-amber-500" />
+                  <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20 shadow-[inset_0_1px_0px_rgba(255,255,255,0.05)] animate-pulse">
+                    <ShieldAlert className="w-10 h-10 text-emerald-500" />
                   </div>
                   <div className="flex flex-col gap-3 text-center max-w-xl">
-                    <h4 className="text-xl font-bold text-white">Compiling Documentation...</h4>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h4 className="text-xl font-bold text-white tracking-tight">Compiling Documentation...</h4>
+                    <p className="text-zinc-400 leading-relaxed text-sm">
                       {errorText.includes("not generated")
                         ? "AI is mapping this codebase context and drafting the reference in the background. Check back in a moment."
                         : errorText}
@@ -268,54 +271,54 @@ export default function DocumentsExplorer() {
                   </div>
                   <button 
                     onClick={() => fetchDocument(selectedRepo.id, activeTab)}
-                    className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
+                    className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/[0.08] rounded-xl font-semibold text-xs text-zinc-300 transition-all duration-300 flex items-center gap-2 shadow-[inset_0_1px_0px_rgba(255,255,255,0.05)]"
                   >
-                    <RefreshCw className="w-4 h-4" /> Check Status
+                    <RefreshCw className="w-4 h-4 text-emerald-400" /> Check Status
                   </button>
                 </div>
               ) : document && document.status === "generating" ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 py-32 px-8">
-                  <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
+                  <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
                   <div className="flex flex-col gap-3 text-center">
-                    <p className="text-lg font-bold text-amber-500 uppercase tracking-wider animate-pulse">
+                    <p className="text-base font-bold text-emerald-400 uppercase tracking-wider animate-pulse">
                       Synthesizing {activeTab.replace("_", " ")}...
                     </p>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-xs text-zinc-500 font-medium">
                       Traversing codebase syntax trees and feeding RAG matrices.
                     </p>
                   </div>
                 </div>
               ) : document && document.status === "failed" ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 py-24 px-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-500/10 to-rose-500/10 rounded-2xl flex items-center justify-center border border-red-500/20">
+                  <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 shadow-[inset_0_1px_0px_rgba(255,255,255,0.05)]">
                     <ShieldAlert className="w-10 h-10 text-red-500" />
                   </div>
                   <div className="flex flex-col gap-3 text-center max-w-xl">
-                    <h4 className="text-xl font-bold text-red-500">Generation Failed</h4>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h4 className="text-xl font-bold text-red-500 tracking-tight">Generation Failed</h4>
+                    <p className="text-zinc-400 leading-relaxed text-sm">
                       {document.error_message || "Unknown LLM service connection block."}
                     </p>
                   </div>
                   <button 
                     onClick={handleRetryGeneration} 
                     disabled={isRetrying}
-                    className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 rounded-xl font-bold transition-all duration-300 hover:scale-[1.01] shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center gap-2 text-sm text-white"
                   >
                     <RefreshCw className={`w-4 h-4 ${isRetrying ? "animate-spin" : ""}`} />
                     {isRetrying ? "Retrying..." : "Retry Document Generation"}
                   </button>
                 </div>
               ) : document ? (
-                <div className="p-8 md:p-12 flex flex-col gap-8">
+                <div className="p-6 md:p-8 flex flex-col gap-6">
                   {/* Document Header */}
-                  <div className="flex items-center justify-between pb-6 border-b border-white/10 gap-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] gap-4">
                     <div className="flex flex-col gap-2 min-w-0">
-                      <span className="text-xl font-bold text-white flex items-center gap-3 truncate">
-                        <FileText className="w-6 h-6 text-amber-500 shrink-0" />
+                      <span className="text-xl font-bold text-white flex items-center gap-3 truncate tracking-tight">
+                        <FileText className="w-6 h-6 text-emerald-500 shrink-0" />
                         {document.title}
                       </span>
-                      <span className="text-sm text-slate-400 flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
+                      <span className="text-xs text-zinc-400 flex items-center gap-2 font-medium">
+                        <Clock className="w-4 h-4 text-emerald-400" />
                         Last Compiled: {new Date(document.updated_at).toLocaleString()}
                       </span>
                     </div>
@@ -327,21 +330,21 @@ export default function DocumentsExplorer() {
                         className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
                         title="Reload"
                       >
-                        <RefreshCw className={`w-5 h-5 text-slate-400 ${isLoading ? "animate-spin" : ""}`} />
+                        <RefreshCw className={`w-5 h-5 text-zinc-400 ${isLoading ? "animate-spin" : ""}`} />
                       </button>
                       <button 
                         onClick={handleCopy} 
                         className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
                         title="Copy Markdown"
                       >
-                        {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5 text-slate-400" />}
+                        {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5 text-zinc-400" />}
                       </button>
                       <button 
                         onClick={handleDownload} 
                         className="p-2.5 hover:bg-white/5 rounded-xl transition-all duration-200 hover:scale-105" 
                         title="Download"
                       >
-                        <Download className="w-5 h-5 text-slate-400" />
+                        <Download className="w-5 h-5 text-zinc-400" />
                       </button>
                     </div>
                   </div>
@@ -354,8 +357,8 @@ export default function DocumentsExplorer() {
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 py-32 text-center">
-                  <HelpCircle className="w-10 h-10 text-slate-600 animate-pulse" />
-                  <span className="text-sm text-slate-500 uppercase tracking-wider">No document compiled.</span>
+                  <HelpCircle className="w-10 h-10 text-zinc-700 animate-pulse" />
+                  <span className="text-xs text-zinc-500 uppercase tracking-widest font-semibold">No document compiled.</span>
                 </div>
               )}
             </div>

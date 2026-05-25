@@ -123,46 +123,68 @@ export const apiService = {
   },
 
   async getDocumentByType(repoId: number, docType: string): Promise<Document | null> {
-    const res = await fetch(`${API_BASE_URL}/repositories/${repoId}/documents/${docType}`);
-    
-    if (res.status === 202) {
-      return {
-        id: -1,
-        repo_id: repoId,
-        doc_type: docType as any,
-        title: `Generating ${docType.replace('_', ' ').toUpperCase()}...`,
-        content: "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "generating"
-      };
-    }
-    
-    if (res.status === 500) {
-      const errBody = await res.json();
-      return {
-        id: -1,
-        repo_id: repoId,
-        doc_type: docType as any,
-        title: `${docType.replace('_', ' ').toUpperCase()} Generation Failed`,
-        content: "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "failed",
-        error_message: errBody.error || "Generation failed"
-      };
-    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/repositories/${repoId}/documents/${docType}`);
+      
+      if (res.status === 202) {
+        return {
+          id: -1,
+          repo_id: repoId,
+          doc_type: docType as any,
+          title: `Generating ${docType.replace('_', ' ').toUpperCase()}...`,
+          content: "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          status: "generating"
+        };
+      }
+      
+      if (res.status === 500) {
+        let errorMsg = "Generation failed";
+        try {
+          const errBody = await res.json();
+          errorMsg = errBody.error || errorMsg;
+        } catch (jsonErr) {
+          console.warn("Could not parse 500 error response as JSON:", jsonErr);
+        }
+        return {
+          id: -1,
+          repo_id: repoId,
+          doc_type: docType as any,
+          title: `${docType.replace('_', ' ').toUpperCase()} Generation Failed`,
+          content: "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          status: "failed",
+          error_message: errorMsg
+        };
+      }
 
-    if (res.status === 404 || res.status === 400) {
-      return null;
-    }
+      if (res.status === 404 || res.status === 400) {
+        return null;
+      }
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || `Failed to load ${docType}`);
+      if (!res.ok) {
+        let errorMsg = `Failed to load ${docType}`;
+        try {
+          const err = await res.json();
+          errorMsg = err.detail || errorMsg;
+        } catch (jsonErr) {
+          console.warn("Could not parse error response as JSON:", jsonErr);
+        }
+        throw new Error(errorMsg);
+      }
+      
+      try {
+        return await res.json();
+      } catch (jsonErr) {
+        console.error("Could not parse document data as JSON:", jsonErr);
+        throw new Error("Malformatted document response from server.");
+      }
+    } catch (networkErr: any) {
+      console.error(`Network error loading ${docType}:`, networkErr);
+      throw new Error(networkErr.message || `Network failure loading ${docType}`);
     }
-    
-    return res.json();
   },
 
   async regenerateDocument(repoId: number, docType: string): Promise<any> {
